@@ -3,6 +3,7 @@
 set -e
 MOTION_DIR="${1:-./motion}"
 mkdir -p "$MOTION_DIR"/{clips,dist,out,work}
+MOTION_DIR="$(cd "$MOTION_DIR" && pwd)"  # absolute: the subshell below cds into it
 missing=()
 command -v node >/dev/null || missing+=("node (https://nodejs.org)")
 command -v ffmpeg >/dev/null || missing+=("ffmpeg (macOS: brew install ffmpeg)")
