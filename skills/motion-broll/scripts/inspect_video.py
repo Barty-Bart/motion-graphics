@@ -8,14 +8,18 @@ W, H = int(vs['width']), int(vs['height']); fps = vs['r_frame_rate']; dur = floa
 subprocess.run(['ffmpeg','-loglevel','error','-y','-i',v,'-vf',f'fps=1/{max(1,dur/16):.2f},scale=480:-1,tile=4x4:padding=4','-frames:v','1',f'{out}/contact.png'])
 raw = subprocess.run(['ffmpeg','-loglevel','error','-i',v,'-vf','fps=4,scale=96:54,format=gray','-f','rawvideo','-'],capture_output=True).stdout
 fr = np.frombuffer(raw,np.uint8).reshape(-1,54,96)
-# a column band that is near-black for a stretch = free space for an overlay panel
+# a column band that is near-black for a stretch = free space for an overlay panel.
+# an all-black frame (fade, intro/outro) has no subject: its own 'black' layout, not 'pip'
+def layout(f):
+    if f.max()<=20: return 'black'
+    return 'pip' if f[:,60:].mean()<8 or f[:,:36].mean()<8 else 'full'
 sections=[]; prev=None; start=0
 for i,f in enumerate(fr):
-    dark = f[:,60:].mean()<8 or f[:,:36].mean()<8
-    if dark!=prev:
-        if prev is not None: sections.append({'from':start/4,'to':i/4,'layout':'pip' if prev else 'full'})
-        start=i; prev=dark
-sections.append({'from':start/4,'to':len(fr)/4,'layout':'pip' if prev else 'full'})
+    lay=layout(f)
+    if lay!=prev:
+        if prev is not None: sections.append({'from':start/4,'to':i/4,'layout':prev})
+        start=i; prev=lay
+sections.append({'from':start/4,'to':len(fr)/4,'layout':prev})
 # track the subject box through each PiP section; flag any resize (a panel sized for one box can collide with another)
 for s in sections:
     if s['layout']!='pip': continue
@@ -24,6 +28,7 @@ for s in sections:
         f=fr[i]; cols=np.where(f.max(0)>20)[0]; rows=np.where(f.max(1)>20)[0]
         if len(cols)==0: continue
         boxes.append((i/4,[int(cols.min()*W/96),int(rows.min()*H/54),int((cols.max()+1)*W/96),int((rows.max()+1)*H/54)]))
+    if not boxes: continue
     s['subject_box']=[min(b[1][0] for b in boxes),min(b[1][1] for b in boxes),max(b[1][2] for b in boxes),max(b[1][3] for b in boxes)]
     changes=[]; ref=boxes[0][1]
     for t,b in boxes:

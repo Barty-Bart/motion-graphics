@@ -47,14 +47,15 @@ Skip any question the user already answered.
 
 ```bash
 python3 $SKILL/scripts/inspect_video.py motion/work/source.mp4 motion/work
-python3 $SKILL/scripts/words.py transcript.srt > motion/work/words.txt
+python3 $SKILL/scripts/words.py transcript.srt > motion/work/words.txt   # .vtt works too
 ```
 
 Look at `motion/work/contact.png` yourself. `video.json` gives resolution, fps and layout sections:
 - **full:** the speaker fills the frame.
 - **pip:** the speaker is in a box and the rest is empty. It includes the box position and a warning if the box changes size or moves.
+- **black:** the whole frame is black (a fade, intro or outro).
 
-Clips must match the video's resolution and fps. Word times from an SRT are estimates (±0.2s); treat them as such.
+Clips must match the video's resolution and fps. Word times from an SRT or VTT are estimates (±0.2s); treat them as such.
 
 ## 4. Plan, and get approval before any code
 
