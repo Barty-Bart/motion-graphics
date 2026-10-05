@@ -14,9 +14,13 @@ const {chromium}=require('playwright');const {spawn}=require('child_process');co
  const enc=info.alpha?['-c:v','prores_ks','-profile:v','4','-pix_fmt','yuva444p10le','-vendor','apl0']:['-c:v','libx264','-crf','14','-preset','medium','-pix_fmt','yuv420p','-movflags','+faststart'];
  const ff=spawn('ffmpeg',['-loglevel','error','-y','-f','image2pipe','-framerate',fr[1],'-c:v','png','-i','-','-vf',vf,'-r',fr[0],...enc,out]);
  ff.stderr.on('data',d=>process.stderr.write(d));
- for(let f=0;f<N;f++){for(let k=0;k<K;k++){const t=Math.max(0,f/FPS+(k-1.5)*sub);await p.evaluate(t=>seek(t),t);
+ // if ffmpeg dies, stop feeding it instead of waiting forever for 'drain'
+ let ffCode=null;const closed=new Promise(r=>ff.on('close',c=>{ffCode=c;r();}));ff.stdin.on('error',()=>{});
+ for(let f=0;f<N&&ffCode===null;f++){for(let k=0;k<K&&ffCode===null;k++){const t=Math.max(0,f/FPS+(k-1.5)*sub);await p.evaluate(t=>seek(t),t);
    const buf=await p.screenshot({type:'png',omitBackground:info.alpha});
-   if(!ff.stdin.write(buf)) await new Promise(r=>ff.stdin.once('drain',r));}}
- ff.stdin.end();await new Promise(r=>ff.on('close',r));await b.close();
- console.log('rendered',out,N,'frames',errs.length?'ERR '+errs[0]:'');
-})();
+   if(!ff.stdin.write(buf)) await Promise.race([new Promise(r=>ff.stdin.once('drain',r)),closed]);}}
+ ff.stdin.end();await closed;await b.close();
+ if(ffCode!==0){console.error('ffmpeg failed (exit '+ffCode+'), '+out+' is incomplete');process.exit(1);}
+ console.log('rendered',out,N,'frames');
+ if(errs.length){console.error('page errors while rendering:\n'+errs.join('\n'));process.exit(1);}
+})().catch(e=>{console.error(e);process.exit(1);});
