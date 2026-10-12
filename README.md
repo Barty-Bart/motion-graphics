@@ -72,6 +72,8 @@ It never invents numbers or results. Bars show relative size and text uses skele
 
 ## object-separation
 
+<p align="center"><img src="docs/object-separation.gif" width="80%" alt="Before and after: talking-head footage, then the same footage with the speaker separated and highlighted in green"></p>
+
 **Separate anything from the background in a video, on your own computer.** Point it at a video and tell it what to separate (you, a product, a hand). It uses SAM 2.1 (Segment Anything, from Meta), which is free and runs locally, so nothing gets uploaded.
 
 The whole skill is one file, `skills/object-separation/SKILL.md`. Run it in Claude Code, which works directly on your computer and can use your graphics chip.
@@ -102,6 +104,13 @@ Once you have the masks, your video is effectively two layers, so you can ask Cl
 
 **Three skills that turn a few sentences about any product into a finished explainer video**, written in code and rendered to MP4 with its own soundtrack. Pick the energy you want:
 
+<p align="center">
+<img src="docs/explainer-high-energy.gif" width="32%" alt="explainer-high-energy before and after: the brief, then a beat-locked hype promo">
+<img src="docs/explainer-default.gif" width="32%" alt="explainer-default before and after: the brief, then a clean product demo">
+<img src="docs/explainer-engaging.gif" width="32%" alt="explainer-engaging before and after: the brief, then a one-take story through the product">
+<br><sub>high-energy · default · engaging</sub>
+</p>
+
 | Skill | Style | Default length |
 |---|---|---|
 | `explainer-high-energy` | Showreel energy. A new idea on every beat (title slam, kinetic words, a signature 3D or particle moment, a product micro-interaction, an end card), and every transition is a shape carrying into the next scene. | 15 s |
@@ -117,6 +126,8 @@ It never invents facts: no made-up stats, customers or offers. Numbers appear on
 **Requirements:** Node 18+, ffmpeg, and Playwright (`npm i playwright`; the skill sets it up). Each skill is a single `SKILL.md` with its renderer inside it.
 
 ## sound-effects
+
+<p align="center"><img src="docs/sound-effects.gif" width="80%" alt="Before and after: a silent explainer clip, then the same clip after the sound pass with its audio level meter moving"></p>
 
 **Makes Claude's motion graphics sound like a real editor scored them, not cheap electronic beeps.** Claude can't hear, so this skill measures everything instead: it checks the music's beat grid against the kick drums, lands cuts on the beat, places one real sound effect per cue, and mixes to -16 LUFS measured on the exported MP4.
 
