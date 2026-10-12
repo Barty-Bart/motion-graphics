@@ -2,13 +2,18 @@
 
 Free video-editing skills for Claude Code. Each skill does one job.
 
-<p>
-  <img src="docs/demo-panel.gif" width="49%" alt="A transparent panel animating beside a picture-in-picture shot of the speaker">
-  <img src="docs/demo-cutaway.gif" width="49%" alt="A full-frame cutaway: build notes turning into a master prompt that is dragged into a session">
-</p>
+## Skills
 
-<!-- SKOOL LINK HERE -->
-> **Want my entire AI video editing process?** I teach it step by step, with the full set of skills, in my community: **[Bart's AI Workshop](https://www.skool.com/barts-ai-workshop-4507/about)**
+| Skill | What it does |
+|---|---|
+| [`motion-broll`](skills/motion-broll/README.md) | Give it a video and a transcript and it makes motion-graphic B-roll timed to your words. |
+| [`object-separation`](skills/object-separation/README.md) | Separates a person, product or hand from the background in a video, on your own computer. |
+| [`explainer-high-energy`](skills/explainer-high-energy/README.md) | A 12–20 s hype promo for any product: beat-locked kinetic type and shape transitions. |
+| [`explainer-default`](skills/explainer-default/README.md) | A clean 45–90 s product demo: your product's UI rebuilt and filmed up close while it's used. |
+| [`explainer-engaging`](skills/explainer-engaging/README.md) | A 10–30 s one-take story: one element travels through your product's workflow. |
+| [`sound-effects`](skills/sound-effects/README.md) | Adds real sound effects timed to the beat and measured, so it doesn't sound like cheap beeps. |
+
+> **Want the full course?** I teach my entire AI video editing process step by step in my community: **[Join Bart's AI Workshop on Skool](https://www.skool.com/barts-ai-workshop-4507/about)**
 
 ## Install
 
@@ -18,57 +23,43 @@ npx skills add Barty-Bart/motion-graphics
 
 Pick the skills you want. It works in Claude Code and other agents that read skills. Or copy a skill's folder from `skills/` into `.claude/skills/`.
 
-## Skills
+## Examples
 
 ### motion-broll
 
-<p align="center"><img src="docs/demo-cutaway.gif" width="80%" alt="A full-frame cutaway: build notes turning into a master prompt that is dragged into a session"></p>
+<p align="center"><img src="docs/demo-cutaway.gif" width="80%" alt="Motion B-roll cutaway timed to speech"></p>
 
-Give it a video and a transcript and it makes motion-graphic B-roll timed to your words.
-
-**[Full guide →](skills/motion-broll/README.md)**
+[Full guide →](skills/motion-broll/README.md)
 
 ### object-separation
 
-<p align="center"><img src="docs/object-separation.gif" width="80%" alt="Before and after: talking-head footage, then the same footage with the speaker separated from the background"></p>
+<p align="center"><img src="docs/object-separation.gif" width="80%" alt="Original footage beside the same footage with the speaker separated onto a new background"></p>
 
-Separates a person, product or hand from the background in a video, on your own computer, and shows you exactly what it picked up.
-
-**[Full guide →](skills/object-separation/README.md)**
+[Full guide →](skills/object-separation/README.md)
 
 ### explainer-high-energy
 
-<p align="center"><img src="docs/explainer-high-energy.gif" width="80%" alt="explainer-high-energy before and after: the brief, then a beat-locked hype promo"></p>
+<p align="center"><img src="docs/explainer-high-energy.gif" width="80%" alt="A brief turning into a hype promo"></p>
 
-A 12–20 s hype promo for any product: beat-locked kinetic type, shapes that carry across every transition.
-
-**[Full guide →](skills/explainer-high-energy/README.md)**
+[Full guide →](skills/explainer-high-energy/README.md)
 
 ### explainer-default
 
-<p align="center"><img src="docs/explainer-default.gif" width="80%" alt="explainer-default before and after: the brief, then a clean product demo"></p>
+<p align="center"><img src="docs/explainer-default.gif" width="80%" alt="A brief turning into a clean product demo"></p>
 
-A clean 45–90 s product demo: your product's UI rebuilt and filmed up close while it's used.
-
-**[Full guide →](skills/explainer-default/README.md)**
+[Full guide →](skills/explainer-default/README.md)
 
 ### explainer-engaging
 
-<p align="center"><img src="docs/explainer-engaging.gif" width="80%" alt="explainer-engaging before and after: the brief, then a one-take story through the product"></p>
+<p align="center"><img src="docs/explainer-engaging.gif" width="80%" alt="A brief turning into a one-take product story"></p>
 
-A 10–30 s one-take story: one element travels through your product's workflow while the camera follows it.
-
-**[Full guide →](skills/explainer-engaging/README.md)**
+[Full guide →](skills/explainer-engaging/README.md)
 
 ### sound-effects
 
-<p align="center"><img src="docs/sound-effects.gif" width="80%" alt="Before and after: a silent explainer clip, then the same clip after the sound pass with its audio level meter moving"></p>
+<p align="center"><img src="docs/sound-effects.gif" width="80%" alt="A silent clip, then the same clip with sound effects"></p>
 
-Adds real sound effects and music to your motion graphics, timed to the beat and measured, so it doesn't sound like cheap beeps.
-
-**[Full guide →](skills/sound-effects/README.md)**
-
-More skills will be added to this repo.
+[Full guide →](skills/sound-effects/README.md)
 
 ## Licence
 
