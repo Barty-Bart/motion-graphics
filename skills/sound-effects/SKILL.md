@@ -81,7 +81,7 @@ For every cue, grab one frame just before and just after it from the exported MP
 The bundled sounds are compressed OGG Vorbis previews (trimmed, normalised, often mono), which is fine for most videos. If a sound is too low quality for the job (audible artefacts, a close-up hero sound, a final master), fetch the original:
 - Look up the entry's `source_url` in `sfx/manifest.json`. Every bundled and `default_kit` entry has one.
 - **Freesound** (`freesound.org/people/<user>/sounds/<id>/`): the original is the Download button on that page. It needs a free Freesound account, so ask the user to download it (or use their API key if they give you one).
-- **Kenney** (`kenney.nl/assets/<pack>`): download the pack zip from that page; the file has the same name without the `kenney-<pack>-` prefix.
+- **Kenney** (`kenney.nl/assets/<pack>`): download the pack zip from that page. Each Kenney entry's `original_file` in the manifest names the exact file, e.g. `kenney_interface-sounds.zip → Audio/click_001.ogg`. The rule: drop the prefix (`kenney-interface-` → interface-sounds, `kenney-ui-` → ui-audio, `kenney-digital-` → digital-audio, `kenney-impact-` → impact-sounds, `kenney-sci-` → sci-fi-sounds), then match the rest inside `Audio/` ignoring case, with `-` read as `_` (`kenney-digital-phaserup1` → `Audio/phaserUp1.ogg`, `kenney-impact-impactpunch-heavy-000` → `Audio/impactPunch_heavy_000.ogg`). Kenney's originals are OGG too, but unprocessed.
 - Save originals into the user's project (for example `sound-effects-cache/originals/`), never into this skill folder, and pass the file to the script via `--swaps` or by editing a copy of the manifest. Apply the same trim and level as the bundled file.
 
 ## Find more sounds
@@ -90,10 +90,10 @@ When the user wants more or different sounds, search these sources, suggest 3–
 | Source | Search | Licence notes |
 |---|---|---|
 | Freesound | `https://freesound.org/search/?q=<words>&f=license:"Creative Commons 0"` | Use the CC0 filter. CC0 can be bundled and needs no credit (credit anyway). CC-BY needs credit in the video description; never bundle CC-BY-NC or use it commercially. |
-| Kenney | `https://kenney.nl/assets?q=audio` | All CC0. Free to use and bundle. |
+| Kenney | `https://kenney.nl/assets/category:Audio` | All CC0. Free to use and bundle. |
 | Mixkit | `https://mixkit.co/free-sound-effects/<category>/` (e.g. `whoosh`, `typing`) | Mixkit SFX Free License: fine in videos, including monetised ones, but **no redistribution**. Download only into the user's project at runtime; never commit or bundle it. |
 | Pixabay | `https://pixabay.com/sound-effects/search/<words>/` | Free in videos, no credit needed, but no standalone redistribution. The user downloads it in a browser; never bundle it. |
-| Sonniss GDC bundles | `https://sonniss.com/gameaudiogdc` | Royalty-free in videos; no raw redistribution or AI training. Local use only. |
+| Sonniss GDC bundles | `https://sonniss.com/gameaudiogdc/` | Royalty-free in videos; no raw redistribution or AI training. Local use only. |
 | YouTube Audio Library | YouTube Studio → Audio Library | For YouTube videos only; available only inside Studio. Never bundle it. |
 
 Only CC0 sounds may be added to this repo's `sfx/` folder, each with a manifest entry (file, category, duration, source_url, licence, attribution) and a row in `LICENSES.md`.
