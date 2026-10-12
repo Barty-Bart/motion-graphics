@@ -1,6 +1,6 @@
 # object-separation
 
-<p align="center"><img src="../../docs/object-separation.gif" width="80%" alt="Before and after: talking-head footage, then the same footage with the speaker separated and highlighted in green"></p>
+<p align="center"><img src="../../docs/object-separation.gif" width="80%" alt="Before and after: talking-head footage, then the same footage with the speaker separated and separated onto a new background"></p>
 
 **Separate anything from the background in a video, on your own computer.** Point it at a video and tell it what to separate (you, a product, a hand). It uses SAM 2.1 (Segment Anything, from Meta), which is free and runs locally, so nothing gets uploaded.
 
@@ -18,7 +18,7 @@ The whole skill is one file, [`SKILL.md`](SKILL.md). Run it in Claude Code, whic
 
 2. **Picks the subject** with a couple of click points on the first frame.
 3. **Separates it** in every frame, trying a short test range first and then the full clip.
-4. **Gives you back your video with the subject highlighted in green**, with the original audio, so you can see exactly what it picked up. It also saves a mask for every frame.
+4. **Gives you back your video with the subject separated onto a new background**, with the original audio, so you can see exactly what it picked up. It also saves a mask for every frame.
 
 Once you have the masks, your video is effectively two layers, so you can ask Claude for whatever you want to do with the subject next without running the separation again.
 
