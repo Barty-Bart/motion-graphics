@@ -77,6 +77,27 @@ ffmpeg -nostats -i after.mp4 -ac 1 -af ebur128=peak=true -f null - 2>&1 | tail -
 ## 6. Prove it
 For every cue, grab one frame just before and just after it from the exported MP4, and plot the waveform around it (`checks/cue-XX.png`). Then pick the **5 riskiest timestamps** (largest beat error, long sounds such as typing and risers, the reveal) and give them to the user to check with headphones.
 
+## Original-quality files
+The bundled sounds are compressed OGG Vorbis previews (trimmed, normalised, often mono), which is fine for most videos. If a sound is too low quality for the job (audible artefacts, a close-up hero sound, a final master), fetch the original:
+- Look up the entry's `source_url` in `sfx/manifest.json`. Every bundled and `default_kit` entry has one.
+- **Freesound** (`freesound.org/people/<user>/sounds/<id>/`): the original is the Download button on that page. It needs a free Freesound account, so ask the user to download it (or use their API key if they give you one).
+- **Kenney** (`kenney.nl/assets/<pack>`): download the pack zip from that page; the file has the same name without the `kenney-<pack>-` prefix.
+- Save originals into the user's project (for example `sound-effects-cache/originals/`), never into this skill folder, and pass the file to the script via `--swaps` or by editing a copy of the manifest. Apply the same trim and level as the bundled file.
+
+## Find more sounds
+When the user wants more or different sounds, search these sources, suggest 3–5 candidates with a link, creator and licence for each, and let the user pick. Only use or redistribute a sound as its licence allows.
+
+| Source | Search | Licence notes |
+|---|---|---|
+| Freesound | `https://freesound.org/search/?q=<words>&f=license:"Creative Commons 0"` | Use the CC0 filter. CC0 can be bundled and needs no credit (credit anyway). CC-BY needs credit in the video description; never bundle CC-BY-NC or use it commercially. |
+| Kenney | `https://kenney.nl/assets?q=audio` | All CC0. Free to use and bundle. |
+| Mixkit | `https://mixkit.co/free-sound-effects/<category>/` (e.g. `whoosh`, `typing`) | Mixkit SFX Free License: fine in videos, including monetised ones, but **no redistribution**. Download only into the user's project at runtime; never commit or bundle it. |
+| Pixabay | `https://pixabay.com/sound-effects/search/<words>/` | Free in videos, no credit needed, but no standalone redistribution. The user downloads it in a browser; never bundle it. |
+| Sonniss GDC bundles | `https://sonniss.com/gameaudiogdc` | Royalty-free in videos; no raw redistribution or AI training. Local use only. |
+| YouTube Audio Library | YouTube Studio → Audio Library | For YouTube videos only; available only inside Studio. Never bundle it. |
+
+Only CC0 sounds may be added to this repo's `sfx/` folder, each with a manifest entry (file, category, duration, source_url, licence, attribution) and a row in `LICENSES.md`.
+
 ## Script
 `scripts/sound_pass.py` runs steps 3–6 end to end:
 ```

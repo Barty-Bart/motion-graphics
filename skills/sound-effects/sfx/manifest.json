@@ -1692,5 +1692,6 @@
   "typing": [
    "typing"
   ]
- }
+ },
+ "originals_note": "Bundled files are compressed OGG previews. Every bundled and default_kit entry has source_url: the Freesound sound page (download the original from there, free account needed) or the Kenney pack page (the pack zip has the original files)."
 }
