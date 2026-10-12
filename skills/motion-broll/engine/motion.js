@@ -12,6 +12,7 @@ const S = M.S = (tau,w,z)=>{
   if(tau<=0) return 0;
   if(!isFinite(w)) return 1;
   if(z<1){const wd=w*Math.sqrt(1-z*z);return 1-Math.exp(-z*w*tau)*(Math.cos(wd*tau)+z*w/wd*Math.sin(wd*tau));}
+  if(z>1+1e-6){const q=w*Math.sqrt(z*z-1),r1=-z*w+q,r2=-z*w-q;return 1-(r2*Math.exp(r1*tau)-r1*Math.exp(r2*tau))/(r2-r1);} // overdamped
   return 1-Math.exp(-w*tau)*(1+w*tau);
 };
 M.MORPH=[15,0.84]; M.FAST=[27,0.86]; M.SLOW=[12.5,0.9]; M.SOFT=[10,0.95]; M.CAM=[7.5,1]; M.INSTANT=[Infinity,1];
