@@ -11,6 +11,7 @@ Free video-editing skills for Claude Code. Each skill does one job.
 | [`explainer-high-energy`](#product-explainers) | A 12–20 s hype promo for any product: beat-locked kinetic type, shapes that carry across every transition. |
 | [`explainer-default`](#product-explainers) | A clean 45–90 s product demo: your product's UI rebuilt and filmed up close while it's used. |
 | [`explainer-engaging`](#product-explainers) | A 10–30 s one-take story: one element travels through your product's workflow while the camera follows it. |
+| [`sound-effects`](#sound-effects) | Adds real sound effects and music to your motion graphics, timed to the beat and measured, so it doesn't sound like cheap beeps. |
 
 More skills will be added to this repo.
 
@@ -115,10 +116,24 @@ It never invents facts: no made-up stats, customers or offers. Numbers appear on
 
 **Requirements:** Node 18+, ffmpeg, and Playwright (`npm i playwright`; the skill sets it up). Each skill is a single `SKILL.md` with its renderer inside it.
 
+## sound-effects
+
+**Makes Claude's motion graphics sound like a real editor scored them, not cheap electronic beeps.** Claude can't hear, so this skill measures everything instead: it checks the music's beat grid against the kick drums, lands cuts on the beat, places one real sound effect per cue, and mixes to -16 LUFS measured on the exported MP4.
+
+**What you get:** the video with sound (`after.mp4`), a `report.html` where you can play every cue and swap sounds (or let the model decide), proof frames and waveforms for each cue, and 5 timestamps to check with headphones.
+
+**The sounds:** a 7-sound default kit plus 104 alternatives (whoosh, transition, pop, click, typing, riser, impact, ding, glitch, UI blips, ambience), all CC0 from Kenney and Freesound and bundled as small OGG files. The default typing sound and 40 optional extras come from Mixkit, which allows use in videos but not redistribution, so the skill downloads them into your project when needed and they're never stored in this repo. Every file's creator, source and licence is in `skills/sound-effects/LICENSES.md`.
+
+**Use it:** `npx skills add Barty-Bart/motion-graphics` and pick `sound-effects`, then ask Claude Code something like *"add sound effects to this video"*.
+
+**Requirements:** ffmpeg and Python 3.10+. The skill installs librosa and friends into a local `.sound-effects` folder you can delete.
+
+**Credits:** the sound-pass method is by **Vox ([@Voxyz_ai](https://x.com/Voxyz_ai/status/2109358372873183564))**. Default kit sounds by qubodup, adh.dreaming, ethernel0, BeaconStudio, peoplearehappy, Squirrel_404 and Mixkit; alternatives by Kenney and the Freesound creators listed in `skills/sound-effects/TOP-PICKS.md` and `LICENSES.md`.
+
 ## Want the full process?
 
 These skills are a starting point. My complete AI video editing process, with the full set of skills, is in **[Bart's AI Workshop](https://www.skool.com/barts-ai-workshop-4507/about)**.
 
 ## Licence
 
-MIT. Geist fonts: SIL Open Font License. Icon paths adapted from Lucide (ISC).
+MIT. Geist fonts: SIL Open Font License. Icon paths adapted from Lucide (ISC). Sound effects in `skills/sound-effects/sfx/`: CC0 1.0 (see that skill's `LICENSES.md`).
