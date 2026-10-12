@@ -55,7 +55,11 @@ cache=os.path.join(A.out,'sound-effects-cache'); os.makedirs(cache,exist_ok=True
 def fetch(e):
   if e.get('path') and os.path.exists(e['path']): return e['path']
   url=e.get('runtime_url'); f=os.path.join(cache,(e.get('category','x'))+'-'+os.path.basename(url))
-  if not os.path.exists(f): run(['curl','-sL','-o',f,url])
+  if not os.path.exists(f):
+    r=run(['curl','-fsSL','-o',f,url])
+    if r.returncode!=0:
+      if os.path.exists(f): os.remove(f)
+      raise SystemExit(f"Could not download runtime sound for '{e.get('category')}' from {url} (curl exit {r.returncode}: {r.stderr.strip()}). Check your connection, or pick a bundled sound via --swaps.")
   return f
 def kit_entry(cat):
   k=kit.get(cat)

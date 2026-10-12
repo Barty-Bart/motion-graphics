@@ -32,7 +32,6 @@ Changes made: leading silence trimmed, length capped (4 s; risers 6 s; ambience 
 | tick/fs528561.ogg | tick | 0.11 | Jummit via Freesound (CC0; credit given voluntarily) | [source](https://freesound.org/people/Jummit/sounds/528561/) |
 | tick/fs384187.ogg | tick | 0.13 | malle99 via Freesound (CC0; credit given voluntarily) | [source](https://freesound.org/people/malle99/sounds/384187/) |
 | tick/fs721514.ogg | tick | 0.04 | BaggoNotes via Freesound (CC0; credit given voluntarily) | [source](https://freesound.org/people/BaggoNotes/sounds/721514/) |
-| whoosh/fs-60013-whoosh.ogg | whoosh | 0.43 | qubodup via Freesound (CC0; credit optional) | [source](https://freesound.org/people/qubodup/sounds/60013/) |
 | whoosh/fs-264777-swoosh.ogg | whoosh | 4.0 | Shinplaster via Freesound (CC0; credit optional) | [source](https://freesound.org/people/Shinplaster/sounds/264777/) |
 | whoosh/fs-169867-swoosh.ogg | whoosh | 2.21 | Halgrimm via Freesound (CC0; credit optional) | [source](https://freesound.org/people/Halgrimm/sounds/169867/) |
 | whoosh/fs-127197-fast-simple-chop-5-aif.ogg | whoosh | 0.48 | dave.des via Freesound (CC0; credit optional) | [source](https://freesound.org/people/dave.des/sounds/127197/) |

@@ -18,18 +18,6 @@
  },
  "bundled": [
   {
-   "file": "whoosh/fs-60013-whoosh.ogg",
-   "category": "whoosh",
-   "duration_s": 0.43,
-   "length": "short",
-   "source_url": "https://freesound.org/people/qubodup/sounds/60013/",
-   "license": "CC0 1.0",
-   "license_url": "https://creativecommons.org/publicdomain/zero/1.0/",
-   "attribution": "qubodup via Freesound (CC0; credit optional)",
-   "note": "Freesound HQ preview of a CC0 sound",
-   "bundled": true
-  },
-  {
    "file": "whoosh/fs-264777-swoosh.ogg",
    "category": "whoosh",
    "duration_s": 4.0,

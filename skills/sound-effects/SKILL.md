@@ -47,21 +47,21 @@ The cue types map to library categories (`category_map` in the manifest):
 | Cue type | Category | Notes |
 |---|---|---|
 | movement (slide, camera move) | whoosh | starts 2 frames early; pick length to match the move |
-| scene_cut | transition | short swoosh/swipe, 2 frames early |
+| scene_cut | whoosh | short whoosh, 2 frames early (`transition` sounds are alternatives) |
 | appear | pop | on the frame |
 | click | click | on the frame |
 | typing | typing | looped/trimmed to `dur`, quiet |
 | build_up | riser | **ends** on the next hit |
 | reveal | impact | the loudest SFX |
-| success | ding | |
+| success | pop | (`ding` sounds are alternatives) |
 | error_or_tech | glitch | |
-| hover_or_small_ui | ui-blip | very quiet |
+| hover_or_small_ui | tick | very quiet (`ui-blip` and `click` are alternatives) |
 | bed | ambience | under everything, optional |
 
 Use one sound per cue. Vary takes within a category so repeats don't sound robotic.
 
 ## 3. Beat grid, and check it
-Run `librosa.beat.beat_track`. **librosa sometimes locks onto the off-beat.** Low-pass the music below 120 Hz, plot it against the beat lines for the first 4 bars, and compare where the kicks land. If the kicks don't sit on the lines, shift the whole grid by the median offset and plot again. Show the user `beatgrid.png`. (In this skill's own demo, librosa was 212 ms off and the check caught it.)
+Run `librosa.beat.beat_track`. **librosa sometimes locks onto the off-beat.** Low-pass the music below 120 Hz, plot it against the beat lines for the first 4 bars, and compare where the kicks land. If the kicks don't sit on the lines, shift the whole grid by the median offset and plot again. Show the user `beatgrid.png`.
 
 ## 4. Put the big moves on the beat
 Hard cuts and reveals should land on a beat. If you can change the animation timings, change them. If you can't, move where the music starts (search offsets and pick the one with the smallest cut-to-beat error). Report the error per cut in ms.

@@ -14,7 +14,7 @@ Based on the sound-pass prompt by **Vox ([@Voxyz_ai](https://x.com/Voxyz_ai/stat
 7. Proves it with frames and waveforms for each cue, plus 5 timestamps for you to check with headphones.
 
 ## Library
-`sfx/` contains a 7-sound **default kit** (`sfx/kit/`, 6 CC0 files plus Mixkit typing fetched at runtime) and 104 CC0 alternatives, stored as small OGG Vorbis files (about 2.7 MB in total). Every bundled file is **CC0**, from Kenney and Freesound. `sfx/manifest.json` lists each file's category, duration, source URL and licence. There are also 40 optional Mixkit links that are downloaded at runtime and never stored in this repo. See `LICENSES.md`.
+`sfx/` contains a 7-sound **default kit** (`sfx/kit/`, 6 CC0 files plus Mixkit typing fetched at runtime) and 103 CC0 alternatives, stored as small OGG Vorbis files (about 2.7 MB in total). Every bundled file is **CC0**, from Kenney and Freesound. `sfx/manifest.json` lists each file's category, duration, source URL and licence. There are also 40 optional Mixkit links that are downloaded at runtime and never stored in this repo. See `LICENSES.md`.
 
 ## Install
 ```
