@@ -2,149 +2,74 @@
 
 Free video-editing skills for Claude Code. Each skill does one job.
 
-> **Want my entire AI video editing process?** I teach it step by step, with the full set of skills, in my community: **[Bart's AI Workshop](https://www.skool.com/barts-ai-workshop-4507/about)**
-
-| Skill | What it does |
-|---|---|
-| [`motion-broll`](#motion-broll) | Give it a video and a transcript and it makes motion-graphic B-roll timed to your words. |
-| [`object-separation`](#object-separation) | Separates a person, product or hand from the background in a video, on your own computer, and shows you exactly what it picked up. |
-| [`explainer-high-energy`](#product-explainers) | A 12–20 s hype promo for any product: beat-locked kinetic type, shapes that carry across every transition. |
-| [`explainer-default`](#product-explainers) | A clean 45–90 s product demo: your product's UI rebuilt and filmed up close while it's used. |
-| [`explainer-engaging`](#product-explainers) | A 10–30 s one-take story: one element travels through your product's workflow while the camera follows it. |
-| [`sound-effects`](#sound-effects) | Adds real sound effects and music to your motion graphics, timed to the beat and measured, so it doesn't sound like cheap beeps. |
-
-More skills will be added to this repo.
-
-## motion-broll
-
-**Motion-graphic B-roll for your videos, made by Claude Code.** Give it a video and a transcript and it plans, animates and renders clips timed to your words. Each clip is one continuous shape that keeps morphing (pill → card → terminal → chart) and never cuts, with a cursor driving every change.
-
 <p>
   <img src="docs/demo-panel.gif" width="49%" alt="A transparent panel animating beside a picture-in-picture shot of the speaker">
   <img src="docs/demo-cutaway.gif" width="49%" alt="A full-frame cutaway: build notes turning into a master prompt that is dragged into a session">
 </p>
 
-### What you get
+<!-- SKOOL LINK HERE -->
+> **Want my entire AI video editing process?** I teach it step by step, with the full set of skills, in my community: **[Bart's AI Workshop](https://www.skool.com/barts-ai-workshop-4507/about)**
 
-You run `/motion-broll`, answer a few questions, approve a plan, and get back:
-
-- **The clips**, named by where they go on your timeline (`04-master-prompt_0m32s40.mp4`). Full-frame cutaways are MP4. Panels that sit in empty space next to you are transparent ProRes 4444 `.mov`.
-- **A preview render** of your video with the clips cut in.
-- **`compare.html`**: original vs. with motion graphics, synced, as side by side, stacked or wipe.
-- **`viewer.html`**: step through the clips one by one.
-- **`TIMING.md`**: every clip with its in/out point and the line it covers.
-
-The preview is for review. For your final cut, drop the clips into your own editor.
-
-### Install
+## Install
 
 ```
 npx skills add Barty-Bart/motion-graphics
 ```
 
-That installs the skills from this repo (pick `motion-broll`, `object-separation`, or both). It works in Claude Code and other agents that read skills.
+Pick the skills you want. It works in Claude Code and other agents that read skills. Or copy a skill's folder from `skills/` into `.claude/skills/`.
 
-Or copy a skill's folder from `skills/` into your project's `.claude/skills/` (or `~/.claude/skills/` to use it everywhere).
+## Skills
 
-**Requirements for motion-broll:** Node 18+, Python 3, and ffmpeg (with the ProRes encoder, standard in Homebrew builds). On first run the skill installs Playwright and Chromium into a local `motion/` folder.
+### motion-broll
 
-### Use it
+<p align="center"><img src="docs/demo-cutaway.gif" width="80%" alt="A full-frame cutaway: build notes turning into a master prompt that is dragged into a session"></p>
 
-```
-/motion-broll
-```
+Give it a video and a transcript and it makes motion-graphic B-roll timed to your words.
 
-Then point it at your video and transcript (an SRT from your editor, Descript or YouTube works). It will:
+**[Full guide →](skills/motion-broll/README.md)**
 
-1. **Inspect the footage.** It reads resolution, frame rate and layout, including picture-in-picture sections and whether the box changes size.
-2. **Estimate word timings** from your transcript.
-3. **Plan the clips** in a table and wait for your OK. For each clip it chooses a full-frame cutaway, a transparent panel in empty space, or nothing, and tells you why.
-4. **Build each clip**, check stills on the key words, and fix what's off.
-5. **Render** with motion blur at your video's frame rate, then make the preview and the comparison pages.
+### object-separation
 
-It never invents numbers or results. Bars show relative size and text uses skeleton lines until you give it the real figures.
+<p align="center"><img src="docs/object-separation.gif" width="80%" alt="Before and after: talking-head footage, then the same footage with the speaker separated from the background"></p>
 
-### How it works
+Separates a person, product or hand from the background in a video, on your own computer, and shows you exactly what it picked up.
 
-- Every frame is a pure function of time. Springs are closed-form step responses, and a value that changes target many times is the sum of one spring per change. There are no CSS transitions or timers, so any frame can be rendered on its own.
-- Clips are small HTML files on a shared engine (`skills/motion-broll/engine/motion.js`). Headless Chromium captures 4 sub-frames per frame across a 180° shutter, and ffmpeg blends them into motion blur.
-- The worked example in `skills/motion-broll/examples/opus-aoe2/` is the six clips from the demo above.
+**[Full guide →](skills/object-separation/README.md)**
 
-## object-separation
+### explainer-high-energy
 
-<p align="center"><img src="docs/object-separation.gif" width="80%" alt="Before and after: talking-head footage, then the same footage with the speaker separated and highlighted in green"></p>
+<p align="center"><img src="docs/explainer-high-energy.gif" width="80%" alt="explainer-high-energy before and after: the brief, then a beat-locked hype promo"></p>
 
-**Separate anything from the background in a video, on your own computer.** Point it at a video and tell it what to separate (you, a product, a hand). It uses SAM 2.1 (Segment Anything, from Meta), which is free and runs locally, so nothing gets uploaded.
+A 12–20 s hype promo for any product: beat-locked kinetic type, shapes that carry across every transition.
 
-The whole skill is one file, `skills/object-separation/SKILL.md`. Run it in Claude Code, which works directly on your computer and can use your graphics chip.
+**[Full guide →](skills/explainer-high-energy/README.md)**
 
-**What it does**
+### explainer-default
 
-1. **Scans your computer** and picks the right model size, then downloads it:
+<p align="center"><img src="docs/explainer-default.gif" width="80%" alt="explainer-default before and after: the brief, then a clean product demo"></p>
 
-   | Your machine | Model | Download |
-   |---|---|---|
-   | NVIDIA GPU with 12 GB+ | large | 898 MB |
-   | Smaller NVIDIA GPU, or Apple Silicon | base-plus | 323 MB |
-   | No GPU (CPU only) | tiny | 156 MB |
+A clean 45–90 s product demo: your product's UI rebuilt and filmed up close while it's used.
 
-2. **Picks the subject** with a couple of click points on the first frame.
-3. **Separates it** in every frame, trying a short test range first and then the full clip.
-4. **Gives you back your video with the subject highlighted in green**, with the original audio, so you can see exactly what it picked up. It also saves a mask for every frame.
+**[Full guide →](skills/explainer-default/README.md)**
 
-Once you have the masks, your video is effectively two layers, so you can ask Claude for whatever you want to do with the subject next without running the separation again.
+### explainer-engaging
 
-**Install:** `npx skills add Barty-Bart/motion-graphics` and pick `object-separation`, or copy `skills/object-separation` into `.claude/skills/`.
+<p align="center"><img src="docs/explainer-engaging.gif" width="80%" alt="explainer-engaging before and after: the brief, then a one-take story through the product"></p>
 
-**Use it:** in Claude Code, ask something like *"use object-separation to separate me from the background in clip.mp4"*.
+A 10–30 s one-take story: one element travels through your product's workflow while the camera follows it.
 
-**Requirements:** any 64-bit Windows, Mac or Linux computer with 8 GB RAM, Python 3.10+ and ffmpeg. No GPU needed: on a plain CPU it works but is slow (about 5 seconds per frame). Apple Silicon or an NVIDIA GPU makes it much faster. Everything installs into one `.object-separation` folder in your project, and the skill tells you how to delete it and the model when you're done.
+**[Full guide →](skills/explainer-engaging/README.md)**
 
-## Product explainers
-
-**Three skills that turn a few sentences about any product into a finished explainer video**, written in code and rendered to MP4 with its own soundtrack. Pick the energy you want:
-
-<p align="center">
-<img src="docs/explainer-high-energy.gif" width="32%" alt="explainer-high-energy before and after: the brief, then a beat-locked hype promo">
-<img src="docs/explainer-default.gif" width="32%" alt="explainer-default before and after: the brief, then a clean product demo">
-<img src="docs/explainer-engaging.gif" width="32%" alt="explainer-engaging before and after: the brief, then a one-take story through the product">
-<br><sub>high-energy · default · engaging</sub>
-</p>
-
-| Skill | Style | Default length |
-|---|---|---|
-| `explainer-high-energy` | Showreel energy. A new idea on every beat (title slam, kinetic words, a signature 3D or particle moment, a product micro-interaction, an end card), and every transition is a shape carrying into the next scene. | 15 s |
-| `explainer-default` | The calm homepage demo. Airy canvas, one short line at a time that the camera pushes into, then your product's real interface shown big while it's used: typing, results, tables, clicks. | 60 s |
-| `explainer-engaging` | A one-take visual story. One hero element travels through your product's workflow, laid out as stations on one big canvas. Each station reacts as it passes, then the camera pulls out to show the whole journey. | 12 s loop |
-
-**Use it:** in Claude Code, run the skill (e.g. `/explainer-default`) and answer one short brief: the product (a URL is best), the one thing viewers must remember, brand colours or "use the website", 16:9 or 9:16. Everything else it decides by itself, and it takes direction if you have any.
-
-**What you get:** `demo.html` (scrub it live in your browser), a fast draft MP4 to review, then the final 60 fps MP4 with motion blur and audio, plus a silent copy.
-
-It never invents facts: no made-up stats, customers or offers. Numbers appear only if you or your website give them.
-
-**Requirements:** Node 18+, ffmpeg, and Playwright (`npm i playwright`; the skill sets it up). Each skill is a single `SKILL.md` with its renderer inside it.
-
-## sound-effects
+### sound-effects
 
 <p align="center"><img src="docs/sound-effects.gif" width="80%" alt="Before and after: a silent explainer clip, then the same clip after the sound pass with its audio level meter moving"></p>
 
-**Makes Claude's motion graphics sound like a real editor scored them, not cheap electronic beeps.** Claude can't hear, so this skill measures everything instead: it checks the music's beat grid against the kick drums, lands cuts on the beat, places one real sound effect per cue, and mixes to -16 LUFS measured on the exported MP4.
+Adds real sound effects and music to your motion graphics, timed to the beat and measured, so it doesn't sound like cheap beeps.
 
-**What you get:** the video with sound (`after.mp4`), a `report.html` where you can play every cue and swap sounds (or let the model decide), proof frames and waveforms for each cue, and 5 timestamps to check with headphones.
+**[Full guide →](skills/sound-effects/README.md)**
 
-**The sounds:** a 7-sound default kit plus 103 alternatives (whoosh, transition, pop, click, typing, riser, impact, ding, glitch, UI blips, ambience), all CC0 from Kenney and Freesound and bundled as small OGG files. The default typing sound and 40 optional extras come from Mixkit, which allows use in videos but not redistribution, so the skill downloads them into your project when needed and they're never stored in this repo. Every file's creator, source and licence is in `skills/sound-effects/LICENSES.md`.
-
-**Use it:** `npx skills add Barty-Bart/motion-graphics` and pick `sound-effects`, then ask Claude Code something like *"add sound effects to this video"*.
-
-**Requirements:** ffmpeg and Python 3.10+. The skill installs librosa and friends into a local `.sound-effects` folder you can delete.
-
-**Credits:** the sound-pass method is by **Vox ([@Voxyz_ai](https://x.com/Voxyz_ai/status/2109358372873183564))**. Default kit sounds by qubodup, adh.dreaming, ethernel0, BeaconStudio, peoplearehappy, Squirrel_404 and Mixkit; alternatives by Kenney and the Freesound creators listed in `skills/sound-effects/TOP-PICKS.md` and `LICENSES.md`.
-
-## Want the full process?
-
-These skills are a starting point. My complete AI video editing process, with the full set of skills, is in **[Bart's AI Workshop](https://www.skool.com/barts-ai-workshop-4507/about)**.
+More skills will be added to this repo.
 
 ## Licence
 
-MIT. Geist fonts: SIL Open Font License. Icon paths adapted from Lucide (ISC). Sound effects in `skills/sound-effects/sfx/`: CC0 1.0 (see that skill's `LICENSES.md`).
+MIT. Geist fonts: SIL Open Font License. Icon paths adapted from Lucide (ISC). Sound effects in `skills/sound-effects/sfx/`: CC0 1.0 (see that skill's [`LICENSES.md`](skills/sound-effects/LICENSES.md)). Sound-pass method by Vox ([@Voxyz_ai](https://x.com/Voxyz_ai/status/2109358372873183564)); full credits are in each skill's README.
