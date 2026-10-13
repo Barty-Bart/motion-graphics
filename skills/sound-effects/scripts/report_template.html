@@ -190,14 +190,17 @@ function initAudio(){
   const lim = ctx.createDynamicsCompressor(); lim.threshold.value = DATA.limit ? 20 * Math.log10(DATA.limit) : -1; lim.knee.value = 0; lim.ratio.value = 20; lim.attack.value = 0.002; lim.release.value = 0.12;
   master.connect(lim); lim.connect(ctx.destination);
 }
-const load = url => bufs[url] ||= fetch(url).then(r => r.arrayBuffer()).then(a => ctx.decodeAudioData(a));
+// embedded sounds are decoded from their base64 directly: published pages and some preview panes block fetch() of data: URLs
+function dataToBuf(url){ const b = atob(url.slice(url.indexOf(',') + 1)); const u = new Uint8Array(b.length); for(let i = 0; i < b.length; i++) u[i] = b.charCodeAt(i); return u.buffer; }
+const load = url => bufs[url] ||= (url.startsWith('data:') ? Promise.resolve(dataToBuf(url)) : fetch(url).then(r => r.arrayBuffer()))
+  .then(a => new Promise((ok, no) => ctx.decodeAudioData(a, ok, no)));
 function soundFor(i, aud){ return (aud && aud.i === i) ? aud.id : now(i); }
 async function events(aud, include){
   const out = [];
   await Promise.all(CUES.map(async c => {
     if(!include(c)) return;
     const s = S[soundFor(c.i, aud)]; if(!s || !s.play) return;
-    const buf = await load(s.play);
+    let buf; try { buf = await load(s.play); } catch(e){ console.warn('could not decode', s.label, e); return; }
     let start = c.t - (c.pre || 0), off = 0, len = buf.duration, loop = false;
     if(c.type === 'build_up'){ const need = c.dur || 0.8; if(buf.duration > need){ off = buf.duration - need; len = need; } start = c.t + need - len; }
     if(c.type === 'typing'){ len = c.dur || 1; loop = true; }
@@ -218,7 +221,9 @@ async function playRange(t0, t1, aud, kind, include, label){
   initAudio(); if(ctx.state === 'suspended') await ctx.resume();
   stopAll(); const me = playing = {kind, aud}; paint(); setBadge('Loading…');
   const withMusic = $('#music').checked && kind !== 'solo';
-  const [ev, music] = await Promise.all([events(aud, include), withMusic && DATA.music ? load(DATA.music) : null]);
+  let ev, music;
+  try { [ev, music] = await Promise.all([events(aud, include), withMusic && DATA.music ? load(DATA.music).catch(() => null) : null]); }
+  catch(e){ if(playing === me){ playing = null; setBadge('Could not play: ' + e.message); paint(); } return; }
   if(playing !== me) return;
   const v = $('#v'); v.currentTime = t0;
   await new Promise(r => { const f = () => { v.removeEventListener('seeked', f); r(); }; v.addEventListener('seeked', f); setTimeout(f, 800); });
