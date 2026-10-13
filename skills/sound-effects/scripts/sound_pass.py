@@ -13,13 +13,20 @@ ap=argparse.ArgumentParser()
 for a in ['video','cues','music','manifest','out']: ap.add_argument('--'+a,required=True)
 ap.add_argument('--music-db',type=float,default=-12.0)
 ap.add_argument('--seed',type=int,default=7)
-ap.add_argument('--swaps',default=None,help='swaps.json from report.html: {cue_index: file|runtime_url|"auto"}')
+ap.add_argument('--swaps',nargs='+',default=None,help='one or more picks files, applied in order (later wins): swaps_applied.json from the last run, then the text pasted from report.html. Format {cue_index: file|runtime_url|"auto"}')
 A=ap.parse_args(); os.makedirs(A.out,exist_ok=True); os.makedirs(f'{A.out}/checks',exist_ok=True)
 random.seed(A.seed)
 run=lambda c:subprocess.run(c,capture_output=True,text=True)
 dur=float(run(['ffprobe','-v','error','-show_entries','format=duration','-of','csv=p=0',A.video]).stdout)
 fps=eval(run(['ffprobe','-v','error','-select_streams','v:0','-show_entries','stream=r_frame_rate','-of','csv=p=0',A.video]).stdout.strip())
 cues=json.load(open(A.cues)); man=json.load(open(A.manifest)); base=os.path.dirname(os.path.abspath(A.manifest))
+# scenes for the review page: use each cue's "segment" if given, else start a new scene at every scene_cut/reveal
+seg_no=0; seg_name=None
+for c in sorted(cues,key=lambda c:c['t']):
+  if c['type']=='bed': c.setdefault('segment','Whole video'); continue
+  if 'segment' in c: seg_name=c['segment']; continue
+  if c['type'] in('scene_cut','reveal') or seg_name is None: seg_no+=1; seg_name=f'Scene {seg_no}'
+  c['segment']=seg_name
 log=[]
 # 1. beat grid + sub-120Hz check
 y,_=librosa.load(A.music,sr=SR,mono=True)
@@ -69,17 +76,36 @@ def alts(cat):
   out=[]
   for c in man.get('alt_categories',{}).get(cat,[cat]): out+=lib.get(c,[])
   return out
-swaps=json.load(open(A.swaps)) if A.swaps else {}
+def options(cat):
+  """every sound a cue of this category may use: default-kit sounds of the allowed categories first, then the library"""
+  out=[k for k in (kit_entry(c) for c in man.get('alt_categories',{}).get(cat,[cat])) if k]
+  return out+alts(cat)
+sid=lambda e:e.get('file') or e.get('runtime_url')
+def read_swaps(p):
+  # accepts swaps.json or the text copied from report.html (the last {...} object in it)
+  t=open(p).read(); m=re.findall(r'\{[^{}]*\}',t)
+  if not m: raise SystemExit(f'No {{...}} picks found in {p}. Paste the text from "Copy my picks" in report.html.')
+  return {str(k):v for k,v in json.loads(m[-1]).items()}
+swaps={}
+for p in (A.swaps or []): swaps.update(read_swaps(p))
+json.dump(swaps,open(f'{A.out}/swaps_applied.json','w'),indent=1)   # pass this back in next round so earlier picks stick
 def pick(cat,want=None,idx=None):
   sw=swaps.get(str(idx))
   pool=alts(cat)
   if sw and sw!='auto':
-    for e in pool+[kit_entry(cat)]:
-      if e and (e.get('file')==sw or e.get('runtime_url')==sw): return e
+    for e in options(cat):
+      if sid(e)==sw: return e
+    log.append(f"swap for cue {idx} ignored: '{sw}' is not a {cat} option in the manifest")
   if sw=='auto' or not kit_entry(cat):
     c=[e for e in pool if not want or e.get('length') in (None,want)] or pool
     return random.choice(c)
   return kit_entry(cat)
+def local_copy(e):
+  """a file on disk for this sound if there is one (bundled, or a runtime sound already in the cache), else None"""
+  if e.get('file'):
+    p=os.path.join(base,e['file']); return p if os.path.exists(p) else None
+  f=os.path.join(cache,(e.get('category','x'))+'-'+os.path.basename(e.get('runtime_url','')))
+  return f if os.path.exists(f) else None
 mix=np.zeros((int(dur*SR)+SR,2),dtype=np.float32); placed=[]
 def load(p):
   a,_=librosa.load(p,sr=SR,mono=False); a=np.atleast_2d(a)
@@ -97,11 +123,13 @@ for idx,c in enumerate(cues):
   else: start=c['t']-pre
   if c['type'] in('appear','click','hover_or_small_ui'): gain=-6
   i=max(0,int(start*SR)); a=a*10**(gain/20); n=min(len(a),len(mix)-i); mix[i:i+n]+=a[:n]
-  placed.append({**c,'idx':idx,'category':cat,'sfx':e.get('file') or e.get('runtime_url'),'sfx_path':fetch(e),'source_url':e.get('source_url') or e.get('source_page'),'license':e.get('license'),'credit':e.get('credit') or e.get('attribution') or 'Mixkit','start':round(start,3),'gain_db':gain,'alternatives':[{'id':x.get('file') or x.get('runtime_url'),'play':(os.path.relpath(x['path'],A.out) if x.get('path') else x.get('runtime_url')),'source_url':x.get('source_url') or x.get('source_page'),'license':x.get('license'),'label':x.get('note') or x.get('title') or os.path.basename(x.get('file') or x.get('runtime_url'))} for x in alts(cat)][:12]})
+  placed.append({**c,'idx':idx,'category':cat,'sfx':sid(e),'sfx_path':fetch(e),'source_url':e.get('source_url') or e.get('source_page'),'license':e.get('license'),'credit':e.get('credit') or e.get('attribution') or 'Mixkit','start':round(start,3),'gain_db':gain,'pre':pre,
+    'options':[{**x,'id':sid(x),'local':local_copy(x)} for x in options(cat)]})
 # music bed
 yt,_=librosa.load(A.music,sr=SR,mono=False); yt=np.atleast_2d(yt); yt=(np.vstack([yt,yt]) if yt.shape[0]==1 else yt).T
 seg=yt[int(mstart*SR):int(mstart*SR)+len(mix)]; seg=seg*10**(A.music_db/20)
 f=int(.6*SR); seg[-f:]*=np.linspace(1,0,f)[:,None]; mix[:len(seg)]+=seg
+sf.write(f'{A.out}/music_bed.wav',seg,SR)   # the report page mixes previews live on top of this
 mix=mix[:int(dur*SR)]; sf.write(f'{A.out}/mix_raw.wav',mix,SR)
 # 4. loudness: measure the exported MP4, adjust, repeat
 def export(gain_db,limit):
@@ -133,4 +161,5 @@ risk=sorted(placed,key=lambda c:-(resid.get(c['t'],0)*10+{'typing':.5,'build_up'
 ts=[f"{c['t']:.2f}s ({c['type']}: {c['desc']}) - check {'beat sync' if c['t'] in resid else 'level/feel'}" for c in sorted(risk,key=lambda c:c['t'])]
 rep=["# SOUND.md (generated by sound_pass.py)","Approach: Vox (@Voxyz_ai) sound pass. Claude can't hear, so everything below is measured.","",f"Music: {A.music} (CC0 / licensed: record source here)","","## Log"]+['- '+l for l in log]+["","## Cues"]+[f"- {c['t']:.2f}s {c['type']} -> {c['sfx']} (start {c['start']}s, {c['gain_db']} dB)" for c in placed]+["","## Check these 5 with headphones"]+['- '+t for t in ts]+["","Not claiming it sounds good: listen to these."]
 open(f'{A.out}/SOUND.md','w').write('\n'.join(rep)); print('\n'.join(rep))
-import report; report.write(A.out,placed,A.video,I,P)
+import report; report.write(A.out,placed,dur=dur,fps=fps,lufs=I,peak=P,gain_db=g,limit=lim,music=f'{A.out}/music_bed.wav')
+print(f"\nReview page: {A.out}/report.html (works when opened directly; keep after.mp4 next to it)")

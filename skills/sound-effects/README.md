@@ -12,11 +12,11 @@ Based on the sound-pass prompt by **Vox ([@Voxyz_ai](https://x.com/Voxyz_ai/stat
 3. Lands cuts on the beat, by retiming the animation or moving where the music starts.
 4. Places one real sound effect per cue from the bundled library: whoosh, transition, pop, click, typing, riser, impact, ding, glitch, UI blips and ambience.
 5. Mixes to **-16 LUFS with true peaks below -4 dBFS, measured on the exported MP4**, and checks the mono downmix too.
-6. Writes `report.html`, where you can hear each cue, swap sounds or let the model decide.
+6. Writes `report.html`: step through the video scene by scene, press play on any sound to hear the whole scene with it swapped in, use one sound everywhere a move repeats, then copy your picks back to Claude.
 7. Proves it with frames and waveforms for each cue, plus 5 timestamps for you to check with headphones.
 
 ## What you get
-The video with sound (`after.mp4`), a `report.html` where you can play every cue and swap sounds (or let the model decide), proof frames and waveforms for each cue, and 5 timestamps to check with headphones.
+The video with sound (`after.mp4`), a `report.html` review page where you hear each scene with any sound swapped in and copy your picks back to Claude, proof frames and waveforms for each cue, and 5 timestamps to check with headphones.
 
 ## The sounds
 A 7-sound default kit plus 103 alternatives (whoosh, transition, pop, click, typing, riser, impact, ding, glitch, UI blips, ambience), all CC0 from Kenney and Freesound and bundled as small OGG files. The default typing sound and 40 optional extras come from Mixkit, which allows use in videos but not redistribution, so the skill downloads them into your project when needed and they're never stored in this repo. Every file's creator, source and licence is in [`LICENSES.md`](LICENSES.md).

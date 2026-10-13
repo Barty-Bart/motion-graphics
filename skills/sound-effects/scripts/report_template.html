@@ -1,0 +1,416 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Sound Pass Review</title>
+<style>
+/* Layout: the video is the stage (left, sticky) with a scene strip and controls under it; the open scene's sounds sit on the right, side by side in time order. */
+:root{
+  --bg:#F3F4F6; --surface:#FFFFFF; --ink:#151821; --muted:#5E6575; --line:#DCDFE5; --accent:#D9540B; --accent-ink:#FFFFFF; --sel:#FFF1E8; --good:#147A4F; --stage:#0B0E14; --live:#FFE7D6;
+  --sans:system-ui,-apple-system,'Segoe UI',Roboto,sans-serif; --mono:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+  color-scheme:light;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#0E1117; --surface:#161A22; --ink:#E7E9EF; --muted:#8C93A4; --line:#2A303C; --accent:#FF7A33; --accent-ink:#1A0F08; --sel:#2A1D15; --good:#4CC38A; --stage:#05070A; --live:#3A2416; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#0E1117; --surface:#161A22; --ink:#E7E9EF; --muted:#8C93A4; --line:#2A303C; --accent:#FF7A33; --accent-ink:#1A0F08; --sel:#2A1D15; --good:#4CC38A; --stage:#05070A; --live:#3A2416; color-scheme:dark}
+*{box-sizing:border-box}
+[hidden]{display:none!important}
+body{background:var(--bg);color:var(--ink);font:15px/1.5 var(--sans);margin:0}
+.wrap{max-width:1280px;margin:0 auto;padding-inline:20px;padding-block:24px 48px}
+header{border-bottom:1px solid var(--line);padding-bottom:16px;margin-bottom:22px}
+h1{font-size:26px;line-height:1.15;margin:0;font-weight:700}
+.steps{display:flex;flex-wrap:wrap;gap:6px 22px;margin:10px 0 0;padding:0;list-style:none;color:var(--muted);font-size:14px}
+.steps b{display:inline-grid;place-items:center;width:20px;height:20px;border-radius:50%;background:var(--ink);color:var(--bg);font:600 12px var(--mono);margin-right:7px}
+.grid{display:grid;grid-template-columns:minmax(0,580px) minmax(0,1fr);gap:28px;align-items:start}
+.left{position:sticky;top:16px;display:flex;flex-direction:column;gap:12px;min-width:0}
+.stage{position:relative;border-radius:10px;overflow:hidden;background:var(--stage)}
+video{width:100%;max-width:100%;aspect-ratio:16/9;display:block;background:var(--stage)}
+.badge{position:absolute;left:10px;top:10px;font:600 12px var(--mono);color:#fff;background:rgba(0,0,0,.6);border-radius:6px;padding:4px 8px;pointer-events:none;max-width:calc(100% - 20px);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.badge.live{background:#D9540B}
+.hit{position:absolute;inset:0;pointer-events:none;display:grid;place-items:center;opacity:0}
+.hit span{font:700 13px var(--mono);color:#fff;background:#D9540B;border-radius:999px;padding:6px 12px;letter-spacing:.06em}
+.hit::before{content:"";position:absolute;inset:0;border:6px solid #D9540B;border-radius:10px}
+.hit.go{animation:hit .6s ease-out}
+@keyframes hit{0%{opacity:1}100%{opacity:0}}
+.strip{position:relative;height:44px;border:1px solid var(--line);border-radius:8px;background:var(--surface);overflow:hidden}
+.scn{position:absolute;top:0;bottom:0;border:0;border-right:1px solid var(--line);background:transparent;padding:2px 6px;text-align:left;font:11px var(--mono);color:var(--muted);overflow:hidden;white-space:nowrap;text-overflow:ellipsis;cursor:pointer}
+.scn.on{background:var(--sel);color:var(--ink);font-weight:600}
+.tk{position:absolute;bottom:5px;width:4px;height:14px;margin-left:-2px;border-radius:2px;background:var(--muted);opacity:.55;pointer-events:none}
+.tk.changed{background:var(--accent);opacity:1}
+.head{position:absolute;top:0;bottom:0;width:2px;background:var(--accent);pointer-events:none;left:0}
+.bar{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.bar .grow{flex:1 1 auto;min-width:0}
+.bar .grow b{display:block;font-size:16px}
+.bar .grow span{color:var(--muted);font:12px var(--mono)}
+button{font:inherit;cursor:pointer;color:inherit}
+.btn{border:1px solid var(--accent);background:var(--accent);color:var(--accent-ink);border-radius:6px;padding:8px 14px;font-weight:600;font-size:14px;display:inline-flex;gap:6px;align-items:center}
+.btn[disabled]{opacity:.4;cursor:default}
+.btn.ghost{background:var(--surface);color:var(--ink);border-color:var(--line)}
+.btn svg,.play svg{width:12px;height:12px}
+button:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.seg{display:inline-flex;border:1px solid var(--line);border-radius:8px;overflow:hidden;background:var(--surface)}
+.seg button{border:0;background:transparent;color:var(--muted);padding:7px 11px;font-size:13px;font-weight:600}
+.seg button[aria-pressed="true"]{background:var(--ink);color:var(--bg)}
+.chk{display:inline-flex;gap:6px;align-items:center;font-size:13px;color:var(--muted)}
+.kbd{font:11px var(--mono);color:var(--muted)}
+.kbd kbd{border:1px solid var(--line);border-bottom-width:2px;border-radius:4px;padding:0 5px;background:var(--surface);color:var(--ink)}
+.box{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:14px;display:flex;flex-direction:column;gap:10px}
+.box h2{font-size:15px;margin:0}
+.box ul{margin:0;padding:0;list-style:none;display:flex;flex-direction:column;gap:4px;font-size:13px}
+.box li{display:flex;gap:8px;min-width:0;flex-wrap:wrap}
+.box li .t{font:600 12px var(--mono);color:var(--muted);flex:none;width:48px;padding-top:1px}
+.note{font-size:13px;color:var(--muted);margin:0}
+.meas{font:12px var(--mono);color:var(--muted);margin:0}
+.pal li{align-items:baseline}
+.pal .n{font:600 12px var(--mono);color:var(--muted);flex:none;width:28px}
+.pal .nm{flex:1 1 160px;min-width:0}
+.chips{display:inline-flex;flex-wrap:wrap;gap:4px}
+.chip{border:1px solid var(--line);background:var(--bg);border-radius:999px;padding:0 8px;font:11px var(--mono);color:var(--ink)}
+.chip:hover{border-color:var(--accent)}
+.panel{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:16px;display:flex;flex-direction:column;gap:10px;min-width:0}
+.panel h2{margin:0;font-size:20px;line-height:1.25}
+.panel .sub{margin:0;color:var(--muted);font-size:13px}
+.cue{border:1px solid var(--line);border-radius:8px;padding:10px 12px;display:flex;flex-direction:column;gap:6px;transition:background .15s}
+.cue.changed{border-color:var(--accent)}
+.cue.sounding{background:var(--live)}
+.cue.editing{box-shadow:0 0 0 2px var(--accent) inset}
+.cue .top{display:grid;grid-template-columns:52px minmax(0,1fr) auto;gap:10px;align-items:center}
+.cue .t{font:600 13px var(--mono);color:var(--muted)}
+.cue .what b{display:block;font-size:14px}
+.cue .what span{font-size:13px;color:var(--muted);display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.cue.changed .what span{color:var(--accent)}
+.also{font-size:12px;color:var(--muted);display:flex;gap:6px;flex-wrap:wrap;align-items:center}
+.opts{display:flex;flex-direction:column;gap:4px;border-top:1px dashed var(--line);padding-top:8px}
+.opt{display:grid;grid-template-columns:34px minmax(0,1fr) auto;gap:10px;align-items:center;padding:5px 6px;border-radius:8px;border:1px solid transparent}
+.opt.using{background:var(--sel);border-color:var(--accent)}
+.opt.hearing .name{color:var(--accent)}
+.opt .name{min-width:0;font-size:14px}
+.opt .name small{display:block;color:var(--muted);font:11px var(--mono)}
+.opt .name a{color:var(--muted)}
+.play{width:34px;height:34px;border-radius:50%;border:1px solid var(--line);background:var(--surface);display:inline-grid;place-items:center;padding:0}
+.play.on{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
+.play[disabled]{opacity:.35;cursor:default}
+.use{border:1px solid var(--line);background:transparent;border-radius:6px;padding:5px 12px;font-size:13px;font-weight:600}
+.using .use{border-color:transparent;color:var(--good);cursor:default}
+.ask{background:var(--sel);border:1px solid var(--accent);border-radius:8px;padding:10px;display:flex;flex-direction:column;gap:8px;font-size:13px}
+.link{background:none;border:0;color:var(--accent);font-weight:600;font-size:13px;padding:4px 0;align-self:flex-start}
+textarea{width:100%;font:12px var(--mono);height:90px;background:var(--bg);color:var(--ink);border:1px solid var(--line);border-radius:6px}
+@media (max-width:900px){.grid{grid-template-columns:minmax(0,1fr)}.left{position:static}}
+@media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+</style></head><body>
+<div class="wrap">
+  <header>
+    <h1>Sound Pass Review</h1>
+    <ol class="steps">
+      <li><b>1</b>Pick a scene with ‹ ›</li>
+      <li><b>2</b>Press ▶ on any sound: the whole scene plays with it in place</li>
+      <li><b>3</b>Press Use on the one you like</li>
+      <li><b>4</b>Copy your picks and paste them to Claude</li>
+    </ol>
+  </header>
+  <div class="grid">
+    <div class="left">
+      <div class="stage">
+        <video id="v" muted playsinline preload="auto"></video>
+        <span class="badge" id="badge">Paused</span>
+        <div class="hit" id="hit"><span>SOUND HITS HERE</span></div>
+      </div>
+      <div class="strip" id="strip" aria-label="Scenes along the video"><div class="head" id="head"></div></div>
+      <div class="bar">
+        <button class="btn ghost" id="prev" type="button" aria-label="Previous scene">‹</button>
+        <div class="grow"><b id="stitle"></b><span id="scount"></span></div>
+        <button class="btn ghost" id="next" type="button" aria-label="Next scene">›</button>
+      </div>
+      <div class="bar">
+        <button class="btn" id="playScene" type="button"></button>
+        <button class="btn ghost" id="playAll" type="button"></button>
+        <label class="chk"><input type="checkbox" id="music" checked> Music</label>
+      </div>
+      <div class="bar">
+        <div class="seg" role="group" aria-label="What ▶ plays"><button type="button" id="mScene" aria-pressed="true">Whole scene</button><button type="button" id="mSolo" aria-pressed="false">This sound only</button></div>
+        <span class="kbd"><kbd>←</kbd><kbd>→</kbd> scene · <kbd>↑</kbd><kbd>↓</kbd> sound · <kbd>space</kbd> replay</span>
+      </div>
+      <div class="box">
+        <h2 id="pick-title">No changes yet</h2>
+        <ul id="pick-list"></ul>
+        <div class="bar">
+          <button class="btn" id="copy" type="button" disabled>Copy my picks</button>
+          <button class="btn ghost" id="reset" type="button" hidden>Undo all</button>
+        </div>
+        <p class="note" id="copy-note" hidden></p>
+        <textarea id="fallback" readonly hidden aria-label="Your picks as text"></textarea>
+      </div>
+      <div class="box">
+        <h2>Sounds in this video</h2>
+        <p class="note">Each sound and every moment it plays. Keep the same sound for the same kind of move so the video feels consistent.</p>
+        <ul class="pal" id="palette"></ul>
+      </div>
+      <p class="meas" id="meas"></p>
+    </div>
+    <section class="panel" id="panel" aria-live="polite"></section>
+  </div>
+</div>
+<script>
+const DATA = /*DATA*/null;
+const DUR = DATA.duration, FPS = DATA.fps || 30, SHOW = 6;
+const S = DATA.sounds, CUES = DATA.cues;
+const $ = s => document.querySelector(s);
+const ICON_PLAY = '<svg viewBox="0 0 12 12" aria-hidden="true"><path d="M2 1l9 5-9 5z" fill="currentColor"/></svg>';
+const ICON_STOP = '<svg viewBox="0 0 12 12" aria-hidden="true"><rect x="2" y="2" width="8" height="8" fill="currentColor"/></svg>';
+const fmt = t => t.toFixed(2) + 's';
+const cap = s => s ? s.charAt(0).toUpperCase() + s.slice(1) : '';
+const nameOf = id => S[id] ? S[id].label : String(id);
+const KIND = {whoosh:'whoosh',transition:'transition',pop:'pop',ding:'ding',click:'click',tick:'tick','ui-blip':'UI blip',typing:'typing',riser:'riser',impact:'impact',glitch:'glitch',ambience:'room tone'};
+$('#v').src = DATA.video;
+$('#meas').textContent = `Rendered mix: ${DATA.lufs.toFixed(1)} LUFS, true peak ${DATA.peak.toFixed(1)} dBFS (measured on after.mp4). Previews here are mixed live with the same timing and levels, so they are close to the render but not identical.`;
+
+// ---------- scenes ----------
+const SCENES = []; const byName = {};
+CUES.forEach(c => { if(!(c.seg in byName)){ byName[c.seg] = SCENES.length; SCENES.push({name: c.seg, cues: []}); } SCENES[byName[c.seg]].cues.push(c.i); });
+SCENES.forEach(s => {
+  const cs = s.cues.map(i => CUES[i]);
+  s.whole = cs.every(c => c.type === 'bed');
+  s.t0 = Math.min(...cs.map(c => c.t)); s.t1 = Math.max(...cs.map(c => c.t + (c.dur || 0)));
+  s.a = s.whole ? 0 : Math.max(0, s.t0 - 0.6); s.b = s.whole ? DUR : Math.min(DUR, s.t1 + 1.0);
+});
+const ORDER = SCENES.map((s, k) => k).sort((x, y) => (SCENES[x].whole ? 1 : 0) - (SCENES[y].whole ? 1 : 0) || SCENES[x].t0 - SCENES[y].t0);
+SCENES.forEach((s, k) => { const nxt = SCENES.filter(o => !o.whole && o.t0 > s.t0).map(o => o.t0); s.stripEnd = s.whole ? DUR : (nxt.length ? Math.min(...nxt) : DUR); });
+
+// ---------- state ----------
+const pick = {};        // cue index -> chosen sound id (only when different from the original)
+let cur = ORDER[0], editing = null, hearing = null, mode = 'scene', ask = null;
+const open = {}, expanded = {};
+const now = i => pick[i] || CUES[i].used;
+
+// ---------- live mix (mirrors sound_pass.py placement and gains) ----------
+let ctx, master, bufs = {}, nodes = [], stopTimer = 0, rafId = 0, playing = null, hitTimers = [];
+function initAudio(){
+  if(ctx) return;
+  ctx = new (window.AudioContext || window.webkitAudioContext)();
+  master = ctx.createGain(); master.gain.value = Math.pow(10, (DATA.gain_db || 0) / 20);
+  const lim = ctx.createDynamicsCompressor(); lim.threshold.value = DATA.limit ? 20 * Math.log10(DATA.limit) : -1; lim.knee.value = 0; lim.ratio.value = 20; lim.attack.value = 0.002; lim.release.value = 0.12;
+  master.connect(lim); lim.connect(ctx.destination);
+}
+const load = url => bufs[url] ||= fetch(url).then(r => r.arrayBuffer()).then(a => ctx.decodeAudioData(a));
+function soundFor(i, aud){ return (aud && aud.i === i) ? aud.id : now(i); }
+async function events(aud, include){
+  const out = [];
+  await Promise.all(CUES.map(async c => {
+    if(!include(c)) return;
+    const s = S[soundFor(c.i, aud)]; if(!s || !s.play) return;
+    const buf = await load(s.play);
+    let start = c.t - (c.pre || 0), off = 0, len = buf.duration, loop = false;
+    if(c.type === 'build_up'){ const need = c.dur || 0.8; if(buf.duration > need){ off = buf.duration - need; len = need; } start = c.t + need - len; }
+    if(c.type === 'typing'){ len = c.dur || 1; loop = true; }
+    out.push({c, buf, start, off, len, loop, gain: Math.pow(10, (c.gain_db || 0) / 20)});
+  }));
+  return out;
+}
+function flash(){ const h = $('#hit'); h.classList.remove('go'); void h.offsetWidth; h.classList.add('go'); }
+function setBadge(text, live){ const b = $('#badge'); b.textContent = text || 'Paused'; b.classList.toggle('live', !!live); }
+function stopAll(){
+  clearTimeout(stopTimer); cancelAnimationFrame(rafId); hitTimers.forEach(clearTimeout); hitTimers = [];
+  nodes.forEach(n => { try{ n.stop(); }catch(e){} }); nodes = [];
+  $('#v').pause(); $('#hit').classList.remove('go'); playing = null;
+  document.querySelectorAll('.cue.sounding').forEach(e => e.classList.remove('sounding'));
+  setBadge(); paint();
+}
+async function playRange(t0, t1, aud, kind, include, label){
+  initAudio(); if(ctx.state === 'suspended') await ctx.resume();
+  stopAll(); const me = playing = {kind, aud}; paint(); setBadge('Loading…');
+  const withMusic = $('#music').checked && kind !== 'solo';
+  const [ev, music] = await Promise.all([events(aud, include), withMusic && DATA.music ? load(DATA.music) : null]);
+  if(playing !== me) return;
+  const v = $('#v'); v.currentTime = t0;
+  await new Promise(r => { const f = () => { v.removeEventListener('seeked', f); r(); }; v.addEventListener('seeked', f); setTimeout(f, 800); });
+  if(playing !== me) return;
+  await v.play().catch(() => {});
+  const C0 = ctx.currentTime + 0.03, T0 = v.currentTime;
+  const add = (buf, when, off, len, gain, loop) => {
+    const src = ctx.createBufferSource(); src.buffer = buf; const g = ctx.createGain(); g.gain.value = gain;
+    src.connect(g); g.connect(master);
+    if(loop){ src.loop = true; const end = when + len; g.gain.setValueAtTime(gain, Math.max(C0, end - 0.05)); g.gain.linearRampToValueAtTime(0, end); src.start(when, off % buf.duration); src.stop(end); }
+    else src.start(when, off, Math.max(0.01, len));
+    nodes.push(src);
+  };
+  if(music) add(music, C0, T0, Math.min(music.duration - T0, t1 - T0 + 0.3), 1, false);
+  ev.forEach(e => {
+    const end = e.start + e.len; if(end <= T0 || e.start >= t1 + 0.5) return;
+    if(e.start >= T0) add(e.buf, C0 + (e.start - T0), e.off, e.len, e.gain, e.loop);
+    else add(e.buf, C0, e.off + (T0 - e.start), e.len - (T0 - e.start), e.gain, e.loop);
+  });
+  if(aud){ const d = CUES[aud.i].t - T0; if(d >= 0) hitTimers.push(setTimeout(flash, d * 1000 + 30)); }
+  setBadge(label, true);
+  stopTimer = setTimeout(stopAll, (t1 - T0) * 1000 + 80);
+  const tick = () => {
+    const t = v.currentTime; $('#head').style.left = (t / DUR * 100) + '%';
+    document.querySelectorAll('.cue[data-i]').forEach(el => { const c = CUES[+el.dataset.i]; el.classList.toggle('sounding', c.type !== 'bed' && t >= c.t - 0.05 && t < c.t + Math.max(0.35, c.dur || 0)); });
+    rafId = requestAnimationFrame(tick);
+  }; tick();
+}
+const inScene = (s, extraBed) => c => s.cues.includes(c.i) || (extraBed && c.type === 'bed');
+function playScene(aud){
+  const s = SCENES[cur];
+  if(mode === 'solo' && aud){ const c = CUES[aud.i]; const a = Math.max(0, c.t - 1), b = Math.min(DUR, c.t + Math.max(1.8, (c.dur || 0) + 0.8)); return playRange(a, b, aud, 'solo', x => x.i === aud.i, 'Only: ' + nameOf(aud.id)); }
+  playRange(s.a, s.b, aud, 'scene', inScene(s, $('#music').checked), aud ? `${s.name} with ${nameOf(aud.id)}` : `Playing ${s.name}`);
+}
+function playAll(){ playRange(0, DUR, null, 'all', () => true, 'Full video with your picks'); }
+
+// ---------- UI ----------
+const strip = $('#strip');
+const scnBtns = SCENES.map((s, k) => {
+  if(s.whole) return null;
+  const b = document.createElement('button'); b.type = 'button'; b.className = 'scn';
+  b.style.left = (s.t0 / DUR * 100) + '%'; b.style.width = ((s.stripEnd - s.t0) / DUR * 100) + '%';
+  b.textContent = s.name; b.title = s.name; b.onclick = () => go(k, true); strip.appendChild(b); return b;
+});
+const ticks = CUES.map(c => { if(c.type === 'bed') return null; const d = document.createElement('div'); d.className = 'tk'; d.style.left = (c.t / DUR * 100) + '%'; strip.appendChild(d); return d; });
+
+function optionsFor(c){
+  const list = [c.used, ...c.options.filter(id => id !== c.used && S[id])];
+  const sameCat = id => S[id] && S[id].cat === S[c.used]?.cat;
+  const rank = id => (id === c.used ? -3 : 0) + (S[id]?.play ? 0 : 2) + (sameCat(id) ? 0 : 1) - (S[id]?.kit ? 0.5 : 0);
+  return list.sort((a, b) => rank(a) - rank(b));
+}
+const sharing = id => CUES.filter(c => now(c.i) === id && c.type !== 'bed');
+function choose(c, id){
+  const old = now(c.i);
+  const others = sharing(old).filter(o => o.i !== c.i && o.options.includes(id));
+  if(others.length && id !== old){ ask = {i: c.i, id, old, others: others.map(o => o.i)}; draw(); return; }
+  apply([c.i], id);
+}
+function apply(idxs, id){ idxs.forEach(i => { if(CUES[i].used === id) delete pick[i]; else pick[i] = id; }); ask = null; refresh(); }
+
+function cueCard(c){
+  const card = document.createElement('div'); card.className = 'cue'; card.dataset.i = c.i;
+  if(c.i in pick) card.classList.add('changed'); if(editing === c.i) card.classList.add('editing');
+  const top = document.createElement('div'); top.className = 'top';
+  const t = document.createElement('span'); t.className = 't'; t.textContent = c.type === 'bed' ? 'all' : fmt(c.t);
+  const what = document.createElement('div'); what.className = 'what';
+  const b = document.createElement('b'); b.textContent = cap(c.desc) || cap(c.type);
+  const sn = document.createElement('span'); sn.textContent = (c.i in pick ? 'Changed to ' : '') + nameOf(now(c.i)) + ' · ' + (KIND[S[now(c.i)]?.cat] || '');
+  what.append(b, sn);
+  const ch = document.createElement('button'); ch.type = 'button'; ch.className = 'btn ghost'; ch.style.padding = '5px 10px'; ch.style.fontSize = '13px';
+  ch.textContent = open[c.i] ? 'Close' : 'Change'; ch.setAttribute('aria-expanded', String(!!open[c.i]));
+  ch.onclick = () => { open[c.i] = !open[c.i]; editing = open[c.i] ? c.i : (editing === c.i ? null : editing); draw(); };
+  top.append(t, what, ch); card.appendChild(top);
+  const also = sharing(now(c.i)).filter(o => o.i !== c.i);
+  if(also.length && c.type !== 'bed'){
+    const a = document.createElement('div'); a.className = 'also'; a.append('Same sound also at ');
+    const chips = document.createElement('span'); chips.className = 'chips';
+    also.forEach(o => { const k = document.createElement('button'); k.type = 'button'; k.className = 'chip'; k.textContent = fmt(o.t); k.title = cap(o.desc); k.onclick = () => jumpToCue(o.i); chips.appendChild(k); });
+    a.appendChild(chips); card.appendChild(a);
+  }
+  if(ask && ask.i === c.i){
+    const q = document.createElement('div'); q.className = 'ask';
+    q.innerHTML = `<span></span><div class="bar"></div>`;
+    q.firstChild.textContent = `${nameOf(ask.old)} also plays at ${ask.others.length} other moment${ask.others.length > 1 ? 's' : ''} (${ask.others.map(i => fmt(CUES[i].t)).join(', ')}). Change them too, so they stay the same?`;
+    const all = document.createElement('button'); all.type = 'button'; all.className = 'btn'; all.textContent = `Change all ${ask.others.length + 1}`; all.onclick = () => apply([ask.i, ...ask.others], ask.id);
+    const one = document.createElement('button'); one.type = 'button'; one.className = 'btn ghost'; one.textContent = 'Only this one'; one.onclick = () => apply([ask.i], ask.id);
+    const no = document.createElement('button'); no.type = 'button'; no.className = 'link'; no.textContent = 'Cancel'; no.onclick = () => { ask = null; draw(); };
+    q.lastChild.append(all, one, no); card.appendChild(q);
+  }
+  if(open[c.i]){
+    const box = document.createElement('div'); box.className = 'opts';
+    const list = optionsFor(c), n = expanded[c.i] ? list.length : Math.min(SHOW, list.length);
+    const shown = list.slice(0, n); if(!shown.includes(now(c.i))) shown.push(now(c.i));
+    shown.forEach(id => box.appendChild(optRow(c, id)));
+    if(list.length > n){ const m = document.createElement('button'); m.type = 'button'; m.className = 'link'; m.textContent = `Show all ${list.length} sounds`; m.onclick = () => { expanded[c.i] = true; draw(); }; box.appendChild(m); }
+    card.appendChild(box);
+  }
+  return card;
+}
+function optRow(c, id){
+  const s = S[id], using = now(c.i) === id;
+  const isHearing = playing && playing.aud && playing.aud.i === c.i && playing.aud.id === id;
+  const r = document.createElement('div'); r.className = 'opt' + (using ? ' using' : '') + (isHearing ? ' hearing' : '');
+  const pb = document.createElement('button'); pb.type = 'button'; pb.className = 'play' + (isHearing ? ' on' : '');
+  pb.innerHTML = isHearing ? ICON_STOP : ICON_PLAY; pb.setAttribute('aria-label', (isHearing ? 'Stop ' : 'Play the scene with ') + nameOf(id));
+  if(s && s.play) pb.onclick = () => { if(isHearing){ stopAll(); return; } editing = c.i; hearing = id; playScene({i: c.i, id}); }; else pb.disabled = true;
+  const nm = document.createElement('div'); nm.className = 'name'; nm.textContent = nameOf(id);
+  const sm = document.createElement('small');
+  sm.textContent = [id === c.used ? 'original' : null, s?.kit ? 'default kit' : null, KIND[s?.cat] || s?.cat, s?.dur ? s.dur + 's' : null, s?.license ? s.license.split(' (')[0] : null, s && !s.play ? 'not downloaded yet' : null].filter(Boolean).join(' · ') + ' ';
+  if(s?.src){ const a = document.createElement('a'); a.href = s.src; a.target = '_blank'; a.rel = 'noopener'; a.textContent = 'source ↗'; sm.appendChild(a); }
+  nm.appendChild(sm);
+  const u = document.createElement('button'); u.type = 'button'; u.className = 'use'; u.textContent = using ? 'Using ✓' : 'Use';
+  u.onclick = () => { if(!using) choose(c, id); };
+  r.append(pb, nm, u); return r;
+}
+function jumpToCue(i){
+  const k = SCENES.findIndex(s => s.cues.includes(i)); open[i] = true; editing = i;
+  go(k, false); setTimeout(() => document.querySelector(`.cue[data-i="${i}"]`)?.scrollIntoView({block: 'nearest', behavior: 'smooth'}), 30);
+}
+function draw(){
+  const s = SCENES[cur], p = $('#panel'); p.innerHTML = '';
+  const h = document.createElement('h2'); h.textContent = s.name;
+  const sub = document.createElement('p'); sub.className = 'sub';
+  sub.textContent = s.whole ? 'Plays under the whole video. ▶ plays the full video with that sound.'
+    : `${fmt(s.a)}–${fmt(s.b)} · ${s.cues.length} sound${s.cues.length > 1 ? 's' : ''}. ${mode === 'solo' ? '▶ plays only the sound you are trying, over the video.' : '▶ on any option plays this whole scene with every sound in it, that option swapped in. The orange flash marks the frame it hits.'}`;
+  p.append(h, sub);
+  s.cues.map(i => CUES[i]).sort((a, b) => a.t - b.t).forEach(c => p.appendChild(cueCard(c)));
+}
+function paint(){
+  const s = SCENES[cur], k = ORDER.indexOf(cur);
+  $('#stitle').textContent = s.name;
+  $('#scount').textContent = `Scene ${k + 1} of ${SCENES.length} · ${s.whole ? 'whole video' : fmt(s.a) + '–' + fmt(s.b)} · ${s.cues.length} sound${s.cues.length > 1 ? 's' : ''}`;
+  scnBtns.forEach((b, j) => b && b.classList.toggle('on', j === cur));
+  ticks.forEach((t, i) => t && t.classList.toggle('changed', i in pick));
+  if(!playing) $('#head').style.left = (s.a / DUR * 100) + '%';
+  const sceneOn = playing && playing.kind === 'scene' && !playing.aud, allOn = playing && playing.kind === 'all';
+  $('#playScene').innerHTML = sceneOn ? ICON_STOP + ' Stop' : ICON_PLAY + ' Play this scene';
+  $('#playAll').innerHTML = allOn ? ICON_STOP + ' Stop' : ICON_PLAY + ' Play full video';
+  $('#mScene').setAttribute('aria-pressed', String(mode === 'scene')); $('#mSolo').setAttribute('aria-pressed', String(mode === 'solo'));
+  draw();
+}
+function palette(){
+  const groups = {};
+  CUES.forEach(c => { (groups[now(c.i)] ||= []).push(c); });
+  const ul = $('#palette'); ul.innerHTML = '';
+  Object.entries(groups).sort((a, b) => b[1].length - a[1].length || a[1][0].t - b[1][0].t).forEach(([id, cs]) => {
+    const li = document.createElement('li');
+    li.innerHTML = '<span class="n"></span><span class="nm"></span><span class="chips"></span>';
+    li.children[0].textContent = '×' + cs.length; li.children[1].textContent = nameOf(id);
+    cs.forEach(c => { const k = document.createElement('button'); k.type = 'button'; k.className = 'chip'; k.textContent = c.type === 'bed' ? 'all' : fmt(c.t); k.title = cap(c.desc); k.onclick = () => jumpToCue(c.i); li.children[2].appendChild(k); });
+    ul.appendChild(li);
+  });
+}
+function go(k, autoplay){ stopAll(); cur = k; ask = null; const v = $('#v'); if(v.readyState) v.currentTime = SCENES[k].a; paint(); if(autoplay) playScene(null); }
+function step(d){ const k = ORDER.indexOf(cur); go(ORDER[(k + d + ORDER.length) % ORDER.length], true); }
+function refresh(){
+  const keys = Object.keys(pick).map(Number).sort((a, b) => CUES[a].t - CUES[b].t);
+  $('#pick-title').textContent = keys.length ? `Your picks (${keys.length})` : 'No changes yet';
+  const ul = $('#pick-list'); ul.innerHTML = '';
+  keys.forEach(k => { const c = CUES[k]; const li = document.createElement('li'); li.innerHTML = '<span class="t"></span><span></span>'; li.children[0].textContent = c.type === 'bed' ? 'all' : fmt(c.t); li.children[1].textContent = `${cap(c.desc)} → ${nameOf(pick[k])}`; ul.appendChild(li); });
+  $('#copy').disabled = !keys.length; $('#reset').hidden = !keys.length; $('#copy-note').hidden = true; $('#fallback').hidden = true;
+  palette(); paint();
+}
+function picksText(){
+  const keys = Object.keys(pick).map(Number).sort((a, b) => CUES[a].t - CUES[b].t);
+  return 'Apply these sound swaps and re-run the sound pass:\n' + keys.map(k => `- ${CUES[k].type === 'bed' ? 'whole video' : fmt(CUES[k].t)} ${cap(CUES[k].desc)} -> ${nameOf(pick[k])}`).join('\n') + '\n' + JSON.stringify(pick);
+}
+$('#copy').onclick = () => {
+  const t = picksText(), note = $('#copy-note');
+  const fail = () => { const f = $('#fallback'); f.value = t; f.hidden = false; f.focus(); f.select(); note.textContent = 'Copy the text below and paste it to Claude.'; note.hidden = false; };
+  try { navigator.clipboard.writeText(t).then(() => { note.textContent = 'Copied. Paste it to Claude in the chat.'; note.hidden = false; }, fail); } catch(e){ fail(); }
+};
+$('#reset').onclick = () => { Object.keys(pick).forEach(k => delete pick[k]); ask = null; refresh(); };
+$('#prev').onclick = () => step(-1);
+$('#next').onclick = () => step(1);
+$('#playScene').onclick = () => (playing && playing.kind === 'scene' && !playing.aud) ? stopAll() : playScene(null);
+$('#playAll').onclick = () => (playing && playing.kind === 'all') ? stopAll() : playAll();
+$('#mScene').onclick = () => { mode = 'scene'; paint(); };
+$('#mSolo').onclick = () => { mode = 'solo'; paint(); };
+document.addEventListener('keydown', e => {
+  if(e.target.closest && e.target.closest('textarea,input')) return;
+  if(e.key === 'ArrowRight'){ e.preventDefault(); step(1); }
+  else if(e.key === 'ArrowLeft'){ e.preventDefault(); step(-1); }
+  else if((e.key === 'ArrowDown' || e.key === 'ArrowUp') && editing != null){
+    e.preventDefault(); const c = CUES[editing]; open[c.i] = true; const list = optionsFor(c).filter(id => S[id]?.play);
+    const k = list.indexOf(hearing && playing ? hearing : now(c.i)); hearing = list[(k + (e.key === 'ArrowDown' ? 1 : -1) + list.length) % list.length];
+    if(list.indexOf(hearing) >= SHOW) expanded[c.i] = true; playScene({i: c.i, id: hearing});
+  }
+  else if(e.key === ' ' && e.target.tagName !== 'BUTTON'){ e.preventDefault(); (hearing && editing != null) ? playScene({i: editing, id: hearing}) : playScene(null); }
+});
+$('#v').addEventListener('loadedmetadata', () => { $('#v').currentTime = SCENES[cur].a; });
+refresh();
+</script>
+</body></html>

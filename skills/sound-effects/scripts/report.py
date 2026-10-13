@@ -1,27 +1,67 @@
-"""Writes report.html after a sound pass: every cue with the sound used, source, licence,
-play buttons, and alternatives to swap (or 'let model decide'). Exports swaps.json."""
-import os,json,html,shutil
-def write(out,placed,video,lufs,peak):
-  e=html.escape
-  vid=os.path.relpath(os.path.join(out,'after.mp4'),out)
-  rows=[]
-  for c in placed:
-    used=os.path.relpath(c['sfx_path'],out)
-    opts=[f'<label class=o><input type=radio name="c{c["idx"]}" value="" checked> keep</label>',
-          f'<label class=o><input type=radio name="c{c["idx"]}" value="auto"> let model decide</label>']
-    for a in c['alternatives']:
-      if a['id']==c['sfx']: continue
-      opts.append(f'<div class=o><label><input type=radio name="c{c["idx"]}" value="{e(a["id"])}"> {e(str(a["label"])[:40])}</label> <audio controls preload=none src="{e(a["play"])}"></audio> <a href="{e(a["source_url"] or "#")}" target=_blank>source</a> <span class=m>{e(a["license"] or "")}</span></div>')
-    rows.append(f'''<tr><td><button onclick="seek({c['t']})">{c['t']:.2f}s</button></td><td>{e(c['type'])}<br><span class=m>{e(c.get('desc',''))}</span></td><td><b>{e(c['category'])}</b></td>
-<td>{e(os.path.basename(str(c['sfx'])))}<br><audio controls preload=none src="{e(used)}"></audio><br><a href="{e(c['source_url'] or '#')}" target=_blank>source page</a> · <span class=m>{e(c['license'] or '')}</span><br><span class=m>{e(c['credit'] or '')}</span></td>
-<td><details><summary>alternatives ({len(c['alternatives'])})</summary>{''.join(opts)}</details></td></tr>''')
-  doc=f'''<!doctype html><meta charset=utf-8><title>Sound pass report</title>
-<style>body{{font-family:system-ui;background:#111;color:#eee;margin:20px}}table{{border-collapse:collapse;width:100%}}td{{border-bottom:1px solid #333;padding:8px;vertical-align:top}}.m{{color:#999;font-size:12px}}a{{color:#9cf}}.o{{margin:4px 0}}audio{{height:28px;vertical-align:middle}}button{{background:#d97757;color:#fff;border:0;border-radius:6px;padding:6px 10px;cursor:pointer}}video{{max-height:420px}}</style>
-<h1>Sound pass report</h1><p>Final mix: <b>{lufs:.1f} LUFS</b>, true peak <b>{peak:.1f} dBFS</b> (measured on the exported MP4). Approach: Vox (@Voxyz_ai).</p>
-<video id=v controls src="{e(vid)}"></video>
-<p>Click a timestamp to jump there. To swap a sound, pick an alternative or "let model decide", then <button onclick="dl()">Download swaps.json</button> and re-run:<br><code>python scripts/sound_pass.py ... --swaps swaps.json</code> (or tell Claude "apply swaps.json").</p>
-<table><tr><th>time</th><th>cue</th><th>category</th><th>sound used</th><th>swap</th></tr>{''.join(rows)}</table>
-<script>function seek(t){{const v=document.getElementById('v');v.currentTime=Math.max(0,t-0.5);v.play()}}
-function dl(){{const s={{}};document.querySelectorAll('input[type=radio]:checked').forEach(i=>{{if(i.value)s[i.name.slice(1)]=i.value}});
-const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([JSON.stringify(s,null,1)],{{type:'application/json'}}));a.download='swaps.json';a.click()}}</script>'''
-  open(os.path.join(out,'report.html'),'w').write(doc)
+"""Writes report.html after a sound pass: a review page grouped into scenes.
+
+Press play on any sound and the page plays that whole scene of the video with every sound in it,
+the one you are trying swapped in, mixed live over the music with the same timing and levels as
+sound_pass.py. Sounds that are used at several moments say where, so a swap can be applied to all
+of them and the video keeps one consistent set of sounds. "Copy my picks" puts the swaps on the
+clipboard; paste them back to Claude, which re-runs sound_pass.py with --swaps.
+
+Everything the page needs (sounds and music bed) is embedded, so it works opened straight from
+disk, in a preview pane, or published as a page. Only after.mp4 has to sit next to it.
+"""
+import os, re, json, base64, subprocess
+
+def _label(e):
+    if e.get('title') and e.get('creator'): return f"{e['title']} — {e['creator']}"
+    if e.get('runtime_url'): return 'Mixkit #' + str(e.get('mixkit_id') or re.search(r'/(\d+)/', e['runtime_url']).group(1))
+    b = os.path.basename(e.get('file', '')).rsplit('.', 1)[0]
+    kenney = b.startswith('kenney-')
+    b = re.sub(r'^fs-?\d+-?', '', b); b = re.sub(r'^kenney-', '', b)
+    b = b.replace('-', ' ').replace('_', ' ').strip()
+    who = 'Kenney' if kenney else (e.get('attribution') or '').split(' via ')[0].strip()
+    name = b.capitalize() if b else 'Freesound ' + (re.search(r'\d+', e.get('file', '')) or [''])[0]
+    return f'{name} — {who}' if who else name
+
+def _data_uri(path):
+    """mp3 data URI so every browser can decode it (Safari has gaps with Ogg Vorbis)."""
+    r = subprocess.run(['ffmpeg', '-v', 'error', '-i', path, '-ac', '2', '-ar', '44100', '-b:a', '128k', '-f', 'mp3', '-'], capture_output=True)
+    if r.returncode or not r.stdout: return None
+    return 'data:audio/mpeg;base64,' + base64.b64encode(r.stdout).decode()
+
+def _dur(path):
+    r = subprocess.run(['ffprobe', '-v', 'error', '-show_entries', 'format=duration', '-of', 'csv=p=0', path], capture_output=True, text=True)
+    try: return round(float(r.stdout), 2)
+    except ValueError: return None
+
+def write(out, placed, dur, fps, lufs, peak, gain_db=0.0, limit=False, music=None):
+    sounds, enc = {}, {}
+    def add(e, local, kit=False):
+        i = e['id']
+        if i in sounds:
+            sounds[i]['kit'] = sounds[i]['kit'] or kit; return
+        play = None
+        if local:
+            if local not in enc: enc[local] = _data_uri(local)
+            play = enc[local]
+        sounds[i] = {'label': _label(e), 'cat': e.get('category'), 'kit': kit or bool(e.get('title') and e.get('creator')),
+                     'license': e.get('license') or '', 'credit': e.get('credit') or e.get('attribution') or '',
+                     'src': e.get('source_url') or e.get('source_page'), 'dur': e.get('duration_s') or (_dur(local) if local else None),
+                     'play': play}
+    cues = []
+    for c in placed:
+        for o in c['options']: add(o, o.get('local'))
+        if c['sfx'] not in sounds:
+            add({'id': c['sfx'], 'category': c['category'], 'source_url': c['source_url'], 'license': c['license'], 'credit': c['credit'],
+                 'file': c['sfx'] if not str(c['sfx']).startswith('http') else None, 'runtime_url': c['sfx'] if str(c['sfx']).startswith('http') else None}, c['sfx_path'])
+        elif not sounds[c['sfx']]['play'] and c.get('sfx_path'):
+            sounds[c['sfx']]['play'] = _data_uri(c['sfx_path'])
+        cues.append({'i': c['idx'], 't': c['t'], 'type': c['type'], 'desc': c.get('desc', ''), 'seg': c.get('segment', 'Scene'),
+                     'dur': c.get('dur'), 'pre': c.get('pre', 0), 'gain_db': c['gain_db'], 'used': c['sfx'],
+                     'options': [o['id'] for o in c['options']]})
+    data = {'duration': dur, 'fps': fps, 'lufs': lufs, 'peak': peak, 'gain_db': gain_db, 'limit': limit or None,
+            'video': 'after.mp4', 'music': _data_uri(music) if music and os.path.exists(music) else None,
+            'cues': cues, 'sounds': sounds}
+    tpl = open(os.path.join(os.path.dirname(os.path.abspath(__file__)), 'report_template.html'), encoding='utf-8').read()
+    html = tpl.replace('/*DATA*/null', json.dumps(data, separators=(',', ':')).replace('</', '<\\/'))
+    open(os.path.join(out, 'report.html'), 'w', encoding='utf-8').write(html)
+    return os.path.join(out, 'report.html')

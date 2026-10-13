@@ -40,7 +40,8 @@ python3 -m venv .sound-effects
 
 ## 2. Build the cue list
 Read the video's duration and fps with `ffprobe`. List every moment that needs a sound. Take them from the composition source when you can (HyperFrames/Remotion timeline, GSAP labels, motion-broll `plan.json`). Otherwise detect scene cuts with `ffmpeg -i in.mp4 -vf "select='gt(scene,0.3)',showinfo" -f null -`.
-Write `cues.json` as `[{"t": 2.0, "type": "scene_cut", "desc": "cut to card"}, {"t": 4.2, "type": "typing", "dur": 1.3, "desc": "..."}]`.
+Write `cues.json` as `[{"t": 2.0, "type": "scene_cut", "desc": "cut to card", "segment": "Brand slam"}, {"t": 4.2, "type": "typing", "dur": 1.3, "desc": "...", "segment": "Product demo"}]`.
+Write `desc` the way the user would describe the moment on screen ("orange flood + name slams in"), because that is the label they see in the review page. `segment` names the scene the cue belongs to (use the composition's own scene names). It is optional: without it, the script starts a new scene at every `scene_cut` and `reveal`, and puts `bed` cues under "Whole video".
 
 The cue types map to library categories (`category_map` in the manifest):
 
@@ -104,10 +105,24 @@ Only CC0 sounds may be added to this repo's `sfx/` folder, each with a manifest 
 .sound-effects/bin/python scripts/sound_pass.py --video silent.mp4 --cues cues.json \
   --music track.mp3 --manifest sfx/manifest.json --out out/
 ```
-It outputs `after.mp4`, `report.html`, `SOUND.md` (log, cue → file table, LUFS and peak numbers, the 5 timestamps), `beatgrid.png` and `checks/`. Read its log and fix anything over target. If you changed the animation timings, re-render first.
+It outputs `after.mp4`, `report.html`, `SOUND.md` (log, cue → file table, LUFS and peak numbers, the 5 timestamps), `beatgrid.png`, `checks/` and `swaps_applied.json`. Read its log and fix anything over target. If you changed the animation timings, re-render first.
 
-## 7. Swap report
-`sound_pass.py` also writes `report.html`. It lists every cue with its timestamp, category, the sound used (with a play button), the source page, licence and credit, plus the alternatives in that category, each with a play button and a "let model decide" option. Open it for the user. They choose, click **Download swaps.json**, and you re-run with `--swaps swaps.json`. `"auto"` means pick another sound from the alternatives. Keep cue indices stable between runs.
+## 7. Let the user swap sounds (review page)
+`sound_pass.py` writes `out/report.html`. It is one self-contained file (sounds and music embedded); only `after.mp4` has to sit next to it, so it works opened straight from disk, in a preview pane, or published as a page. **Open it for the user every time.**
+
+What the user does on it:
+- Steps through the video **scene by scene** (‹ ›, or the scene strip under the video). Each scene lists its sounds side by side in time order.
+- Presses ▶ on any option: the page plays **that whole scene** of the video with every sound in it and the option swapped in, mixed live over the music with the same timing and levels as the script. An orange flash on the video marks the frame that sound hits. "This sound only" plays it alone over the video; the Music box turns the music and room tone off.
+- Presses **Use**. If the replaced sound is also used at other moments, the page lists them and offers **Change all**, so the same kind of move keeps the same sound across the video. "Same sound also at …" chips and the **Sounds in this video** list show every sound and where it plays.
+- Presses **Copy my picks** and pastes the text into the chat.
+
+What you do with the pasted text: save it as `out/picks.txt` and re-run with the previous picks first, so earlier choices stick:
+```
+.sound-effects/bin/python scripts/sound_pass.py ... --out out/ --swaps out/swaps_applied.json out/picks.txt
+```
+(First round: `--swaps out/picks.txt`.) Later files win. `"auto"` means pick another sound from the alternatives. Keep cue indices stable between runs: never reorder `cues.json` while the user is picking. Then open the new `report.html` again and report the new numbers.
+
+The previews are a live browser mix, close to the render but not identical; the exported `after.mp4` and its measurements are the truth. Runtime (Mixkit) alternatives preview only once they are in `sound-effects-cache/`.
 
 ## Report to the user
 Report the music source and licence, the beat-grid result (shifted or not, and by how much), the cut-to-beat errors, final LUFS and true peak (stereo and mono), and the 5 timestamps. Don't tell them it sounds good.
