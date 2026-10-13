@@ -2,3 +2,5 @@ node_modules/
 motion/
 .DS_Store
 *.mov
+__pycache__/
+*.pyc

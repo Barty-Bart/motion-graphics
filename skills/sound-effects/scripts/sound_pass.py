@@ -12,6 +12,9 @@ SR=48000
 ap=argparse.ArgumentParser()
 for a in ['video','cues','music','manifest','out']: ap.add_argument('--'+a,required=True)
 ap.add_argument('--music-db',type=float,default=-12.0)
+ap.add_argument('--music-source',default=None,help='where the music came from (track, artist, link), for CREDITS.txt')
+ap.add_argument('--music-license',default=None,help='the music licence the user confirmed, e.g. "Mixkit Stock Music Free License"')
+ap.add_argument('--use-case',default=None,help='where the video will be published, e.g. "YouTube and Instagram"; checked against known licence limits')
 ap.add_argument('--seed',type=int,default=7)
 ap.add_argument('--swaps',default=None,help='swaps.json from report.html: {cue_index: file|runtime_url|"auto"}')
 A=ap.parse_args(); os.makedirs(A.out,exist_ok=True); os.makedirs(f'{A.out}/checks',exist_ok=True)
@@ -128,9 +131,39 @@ for k,c in enumerate(placed):
   s0=max(0,c['t']-0.5); s1=min(dur,c['t']+0.8); seg=au[int(s0*SR):int(s1*SR)]
   ax[2].plot(np.linspace(s0,s1,len(seg)),seg,lw=.4); ax[2].axvline(c['t'],color='r'); ax[2].set_title(f"cue {k} @ {c['t']:.2f}s {c['type']} <- {os.path.basename(c['sfx'])}",fontsize=8)
   plt.tight_layout(); plt.savefig(f"{A.out}/checks/cue-{k:02d}.png",dpi=80); plt.close()
+# credits + licence check: only CC0 and Mixkit Free License count as known free licences; anything else is named as unknown
+allman={}
+for e in man.get('bundled',[])+man.get('runtime',[])+man.get('default_kit',[]): allman[e.get('file') or e.get('runtime_url')]=e
+def free(lic): l=(lic or ''); return 'CC0' in l or ('Mixkit' in l and 'Free License' in l and 'Restricted' not in l)
+def credit_line(c):
+  e=allman.get(c['sfx'],{}); lic=c.get('license') or e.get('license') or 'licence unknown'
+  if e.get('title') and e.get('creator'): name,who,src=e['title'],e['creator'],e.get('source','Freesound').split(' (')[0]
+  elif str(c['sfx']).startswith('http'): name,who,src='Mixkit #'+str(e.get('mixkit_id') or ''),'Mixkit','Mixkit'
+  else:
+    b=os.path.basename(c['sfx']).rsplit('.',1)[0]; kenney=b.startswith('kenney-')
+    name=re.sub(r'^kenney-','',re.sub(r'^fs-?\d+-?','',b)).replace('-',' ').strip().capitalize() or 'Freesound '+(re.findall(r'\d+',b) or [''])[0]
+    a=e.get('attribution') or ''; who='Kenney' if kenney else (a.split(' via ')[0].strip() or 'unknown creator'); src='kenney.nl' if kenney else (a.split(' via ')[1].split(' (')[0].strip() if ' via ' in a else 'unknown source')
+  url=c.get('source_url') or e.get('source_url') or e.get('source_page'); ok=free(lic)
+  return ok,name,who,lic,url,f'"{name}" by {who} ({src}), {lic.split(" (")[0]}'+('' if ok else ' - LICENCE UNKNOWN, check before publishing')+(f' - {url}' if url else '')
+seen={}; unknown=[]
+for c in placed:
+  if c['sfx'] in seen: continue
+  ok,name,who,lic,url,line=credit_line(c); seen[c['sfx']]=line
+  if not ok: unknown.append(f'"{name}" by {who} ({url or "no source link"}): licence "{lic}" is not a known free licence')
+music_line=(f"{A.music_source or os.path.basename(A.music)}, {A.music_license}" if A.music_license else f"{A.music_source or os.path.basename(A.music)} - LICENCE NOT CONFIRMED, add the track, artist and licence before publishing")
+open(f'{A.out}/CREDITS.txt','w').write('Sound effects\n'+'\n'.join(seen.values())+'\n\nMusic\n'+music_line+'\n')
+lic_report=(["All sound effects have a known free licence (CC0 or Mixkit Free License). Sources can change their terms; check the source pages now and then."] if not unknown else ["UNKNOWN LICENCES, do not publish until checked:"]+['  '+u for u in unknown])+[("Music licence: "+A.music_license) if A.music_license else "Music licence: NOT CONFIRMED. Ask the user where the track is from and what licence it has."]
+# use case against the known limits of the sources (Claude still checks each source's current page, SKILL.md step 0)
+uc=(A.use_case or '').lower(); conflicts=[]
+if A.use_case:
+  if 'mixkit' in ((A.music_license or '')+(A.music_source or '')).lower() and any(w in uc for w in ('tv','television','broadcast','radio','game','cd','dvd')):
+    conflicts.append('Mixkit music is not allowed for TV/radio broadcast, video games or CDs/DVDs: pick another track.')
+  if any('Mixkit' in str(c.get('license')) for c in placed) and any(w in uc for w in ('template','tool','asset pack','stock')):
+    conflicts.append('Mixkit sounds cannot be redistributed inside a template or tool: swap them for CC0 sounds.')
+lic_report.append(('Use case: '+A.use_case+(' - CONFLICT: '+' '.join(conflicts) if conflicts else ' - no conflict with the known licence limits; still check each source page today (SKILL.md step 0).')) if A.use_case else 'Use case: NOT GIVEN. Ask the user where the video will be published.')
 # 6. five timestamps for a human with headphones (riskiest first)
 risk=sorted(placed,key=lambda c:-(resid.get(c['t'],0)*10+{'typing':.5,'build_up':.4,'reveal':.3,'scene_cut':.2}.get(c['type'],0)))[:5]
 ts=[f"{c['t']:.2f}s ({c['type']}: {c['desc']}) - check {'beat sync' if c['t'] in resid else 'level/feel'}" for c in sorted(risk,key=lambda c:c['t'])]
-rep=["# SOUND.md (generated by sound_pass.py)","Approach: Vox (@Voxyz_ai) sound pass. Claude can't hear, so everything below is measured.","",f"Music: {A.music} (CC0 / licensed: record source here)","","## Log"]+['- '+l for l in log]+["","## Cues"]+[f"- {c['t']:.2f}s {c['type']} -> {c['sfx']} (start {c['start']}s, {c['gain_db']} dB)" for c in placed]+["","## Check these 5 with headphones"]+['- '+t for t in ts]+["","Not claiming it sounds good: listen to these."]
+rep=["# SOUND.md (generated by sound_pass.py)","Approach: Vox (@Voxyz_ai) sound pass. Claude can't hear, so everything below is measured.","",f"Music: {music_line}","","## Licences"]+['- '+l for l in lic_report]+["- CREDITS.txt: optional, ready to paste into a YouTube, Instagram or TikTok description. CC0 sounds need no credit; the list doubles as proof of source if a platform flags the audio.","","## Log"]+['- '+l for l in log]+["","## Cues"]+[f"- {c['t']:.2f}s {c['type']} -> {c['sfx']} (start {c['start']}s, {c['gain_db']} dB)" for c in placed]+["","## Check these 5 with headphones"]+['- '+t for t in ts]+["","Not claiming it sounds good: listen to these."]
 open(f'{A.out}/SOUND.md','w').write('\n'.join(rep)); print('\n'.join(rep))
 import report; report.write(A.out,placed,A.video,I,P)

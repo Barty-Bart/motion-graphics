@@ -28,8 +28,28 @@ Everything else in the manifest is an alternative (`alt_categories` lists which 
 - **Never synthesize music or sound effects in code** (no oscillator or sine beeps). Use real recorded files.
 - **Sound effects: use the bundled library first.** `sfx/manifest.json` lists every file with its category, duration, source and licence. All bundled files are CC0.
 - If the bundled library has nothing that fits, use the `runtime` entries in the manifest (Mixkit). Download them into the user's project, never into this skill folder, and never commit them. Mixkit allows use in videos but not standalone redistribution.
-- **Music:** a track the user gives you, or one with a licence that allows monetised YouTube use (Mixkit Stock Music Free License, CC0). Write the source and licence into `SOUND.md`. If neither exists, ask the user.
+- **Music:** a track the user gives you, or one from `MUSIC.md` (suggested free tracks by feel, downloaded at runtime, never committed). Write the source and licence into `SOUND.md`. If the user has no track, suggest 2–3 from `MUSIC.md` that fit the video and let them pick.
+- **Licences:** only CC0 and Mixkit Free License count as free and safe; the script checks every sound it places. Don't list licences sound by sound. If all are known, tell the user once: the sounds are listed as CC0 or Mixkit Free License by their sources, sources can change their terms so check the source page now and then. If the script reports an unknown licence, name that exact sound, its licence and its source link, and tell the user not to publish until it is checked or swapped. Never describe an unknown licence as probably fine.
+- **Music licence:** ask where the track came from and pass `--music-source "track, artist, link"` and `--music-license "..."`. Without them the run marks the music LICENCE NOT CONFIRMED; say so plainly.
+- **Credits:** every run writes `CREDITS.txt`, a paste-ready list of the sounds actually used and the music. Recommend it once: optional, for a YouTube, Instagram or TikTok description; CC0 needs no credit, but the list is proof of source if a platform flags the audio.
 - Measure the **exported MP4**, never the intermediate WAV.
+- Measure the **exported MP4**, never the intermediate WAV.
+
+## 0. Licence check (during the edit, before you export)
+Sources change their terms, so check the current terms for **what this video actually uses**, every time, before the final export:
+
+1. **Use case.** Ask where the video will be published, unless it is already clear (for example "my YouTube video"): YouTube, Instagram, TikTok, other social, online ads, a podcast, client work, TV or radio broadcast, a video game, CDs or DVDs, or a template or tool for other people. Pass it as `--use-case "..."` so it lands in `SOUND.md`.
+2. **Sources.** For each source used in this video (the providers in `CREDITS.txt`, plus the music), open its current licence page (web fetch; if the site blocks it, the user's browser) and check two things: the terms still say what the table below says, and the use case is allowed. For Freesound, open the page of each sound actually used and confirm it still says Creative Commons 0. For the music, open the track's page.
+3. **Report it plainly**, one line per source: "Checked today: Mixkit Stock Music Free License, unchanged, YouTube allowed." If a source changed its terms or the use case is not allowed, name the exact sound or track and why, and swap it before exporting. Never call an unchecked or unclear licence fine.
+
+| Source | Licence page | Allows (checked 13 Oct 2026) | Doesn't allow |
+|---|---|---|---|
+| Freesound, CC0 | the sound's own page | anything, no credit needed | nothing (CC-BY needs a credit; never use CC-BY-NC commercially) |
+| Kenney | the pack's page on kenney.nl | anything (CC0) | nothing |
+| Mixkit sound effects | https://mixkit.co/license/#sfxFree | web, social, podcasts, games, films, CDs/DVDs, TV/radio | redistributing the file on its own or inside a tool or template; registering it with a rights service |
+| Mixkit music | https://mixkit.co/license/#musicFree | YouTube, social, online ads, podcasts, education | CDs/DVDs, TV/radio, video games, remixing, registering it with Content ID |
+
+Mixkit forbids redistributing its files "in a tool or template", which is why this skill never stores Mixkit sounds or music: they are downloaded into the user's project at runtime.
 
 ## 1. Set up
 Needs ffmpeg and Python 3.10+. Install into a folder you can delete:
@@ -85,7 +105,7 @@ The bundled sounds are compressed OGG Vorbis previews (trimmed, normalised, ofte
 - Save originals into the user's project (for example `sound-effects-cache/originals/`), never into this skill folder, and pass the file to the script via `--swaps` or by editing a copy of the manifest. Apply the same trim and level as the bundled file.
 
 ## Find more sounds
-When the user wants more or different sounds, search these sources, suggest 3–5 candidates with a link, creator and licence for each, and let the user pick. Only use or redistribute a sound as its licence allows.
+When the user wants more or different sounds, search these sources, suggest 3–5 candidates with a link, creator and licence for each, and let the user pick. Before using any of them, open its page, confirm the licence shown today, and check it allows the user's use case (step 0); add it to `CREDITS.txt`. Only use or redistribute a sound as its licence allows. For music, see `MUSIC.md`.
 
 | Source | Search | Licence notes |
 |---|---|---|
@@ -104,10 +124,10 @@ Only CC0 sounds may be added to this repo's `sfx/` folder, each with a manifest 
 .sound-effects/bin/python scripts/sound_pass.py --video silent.mp4 --cues cues.json \
   --music track.mp3 --manifest sfx/manifest.json --out out/
 ```
-It outputs `after.mp4`, `report.html`, `SOUND.md` (log, cue → file table, LUFS and peak numbers, the 5 timestamps), `beatgrid.png` and `checks/`. Read its log and fix anything over target. If you changed the animation timings, re-render first.
+Add `--use-case "..."`, and `--music-source`/`--music-license` once confirmed. It outputs `after.mp4`, `report.html`, `SOUND.md` (licence check, log, cue → file table, LUFS and peak numbers, the 5 timestamps), `CREDITS.txt`, `beatgrid.png` and `checks/`. Read its log and fix anything over target. If you changed the animation timings, re-render first.
 
 ## 7. Swap report
 `sound_pass.py` also writes `report.html`. It lists every cue with its timestamp, category, the sound used (with a play button), the source page, licence and credit, plus the alternatives in that category, each with a play button and a "let model decide" option. Open it for the user. They choose, click **Download swaps.json**, and you re-run with `--swaps swaps.json`. `"auto"` means pick another sound from the alternatives. Keep cue indices stable between runs.
 
 ## Report to the user
-Report the music source and licence, the beat-grid result (shifted or not, and by how much), the cut-to-beat errors, final LUFS and true peak (stereo and mono), and the 5 timestamps. Don't tell them it sounds good.
+Report the licence check (all known, or each unknown sound by name), the use case and whether it is allowed, the music source and licence (or that it is not confirmed), that `CREDITS.txt` is there if they want it, the beat-grid result (shifted or not, and by how much), the cut-to-beat errors, final LUFS and true peak (stereo and mono), and the 5 timestamps. Don't tell them it sounds good.
