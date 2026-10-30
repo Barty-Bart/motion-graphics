@@ -39,6 +39,8 @@ M.scene({
 
 Coordinates are **world pixels**. The shape is centred at world (0,0) unless `geom` moves it (`g.cx`, `g.cy`). The camera draws world → screen as `center + cam × (world − focus)`. Choose `cam` per state so the state fills the frame: roughly 1.2–1.6 for cards, 1.8–2.2 for pills. The cursor keeps a constant size on screen.
 
+**4K footage.** Set `W:3840, H:2160` to match the video and keep designing in 1080p world coordinates: double every `cam`, the cursor `size` and any explicit `center` (it defaults to `[W/2,H/2]`). `render.js` and `beats.js` size the viewport to the stage, so renders and contact sheets come out at full frame.
+
 Layer content is positioned relative to its anchor, e.g. `left:-330px; top:40px` inside an `anchor:'t'` layer = 330px left of centre, 40px below the shape's top edge. Top-anchored content rides the top edge when the shape grows.
 
 ## Engine API (`window.M`)
