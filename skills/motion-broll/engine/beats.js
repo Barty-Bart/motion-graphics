@@ -4,6 +4,7 @@ const {chromium}=require('playwright');const path=require('path');const os=requi
  if(!html||!out||!ts.length){console.error('usage: node beats.js clip.html sheet.png t1 [t2 ...]');process.exit(2);}
  const b=await chromium.launch();const p=await b.newPage({viewport:{width:1920,height:1080}});const errs=[];p.on('pageerror',e=>errs.push(e.message));
  await p.goto('file://'+path.resolve(html)+'?render');await p.evaluate(()=>document.fonts.ready);
+ const st=await p.evaluate(()=>({width:document.getElementById('stage').offsetWidth,height:document.getElementById('stage').offsetHeight}));await p.setViewportSize(st);
  const dir=fs.mkdtempSync(path.join(os.tmpdir(),'beats-'));const alpha=await p.evaluate(()=>{const a=document.documentElement.classList.contains('alpha');if(a){document.documentElement.style.background='#000';document.body.style.background='#000';}return a;});
  try{
   for(let i=0;i<ts.length;i++){await p.evaluate(t=>seek(t),+ts[i]);await p.screenshot({path:path.join(dir,`${String(i).padStart(3,'0')}.png`)});}
