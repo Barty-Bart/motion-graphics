@@ -23,6 +23,8 @@ Ask everything in **one** message, then work on your own. Only the product is re
 
 If they gave a URL, read it (web fetch) for the product's real wording, features, colours and font names before writing anything. Use their real words for UI labels and taglines.
 
+If they gave a URL but no brand values, you can read the colours, fonts and logos from the rendered page with easybrandkit: `npx easybrandkit@latest <url> --out brand-kit` (needs Node 22+ and Chrome, Chromium, Edge or Brave). In `brand-kit/BRAND.md`, the colour listed for buttons is the brand colour (if none is listed, keep the default accent), and the heading and body fonts are the brand fonts. A logo from the kit (the `.svg` first) still follows the **Logos** rule below. If the command is not available or fails, take colours and font names from the web fetch as before.
+
 **Never invent facts.** No made-up customer counts, revenue, ratings, testimonials or quotes. Numbers only if the user or the website states them; otherwise use relative bars, progress and placeholder skeleton lines. Example content inside the UI (a prompt, a file name, a project name, prices on a receipt) is fine and should be believable; claims about the product itself (stats, user counts, ratings, offers like "free") are not. Calls to action use only a URL or offer the user or the website gave; with none, end on the name and tagline.
 
 **Logos.** Use a logo only if the user supplies the file or it is their own product and they asked for it. Otherwise write the name as text in the brand font. Third-party logos (integrations) only if supplied; otherwise neutral rounded tiles with the name.
